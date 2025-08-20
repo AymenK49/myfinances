@@ -3,11 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Gestion Financière TND</title>
-
-  <!-- PWA Manifest (base64 intégré) -->
-  <link rel="manifest" href="application/json;base64,ewogICJuYW1lIjogIkdlc3Rpb24gRmluYW5jacOnacOqcmUgVU5EIiwKICAic2hvcnRfbmFtZSI6ICJCaWdldCBUTFAiLAogICJzdGFydF91cmwiOiAiLiIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiI2ZmZmZmZiIsCiAgInRoZW1lX2NvbG9yIjogIiMyOGE3NDUiLAogICJkZXNjcmlwdGlvbiI6ICJHZXN0aW9uIGRlcyBkZXBzZXNlcyBldCByZXZlbnVzIGVuIFRORCIsCiAgaWNvbnM6IFsKICAgIHsic3JjIjogImFzc2V0cy9pY29ucy9pY29uLTE5Mi5wbmciLCAic2l6ZXMiOiAiMTkyeDE5MiIsICJ0eXBlIjogImltYWdlL3BuZyJ9LAogICAgeyJzcmMiOiAiYXNzZXRzL2ljb25zL2ljb24tNTEyLnBuZyIsICJzaXplcyI6ICI1MTJ4NTEyIiwgInR5cGUiOiAiaW1hZ2UvcG5nIn0KICBdCn0=">
-
+  <title>MyFinances - TND</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
     * {
       box-sizing: border-box;
@@ -33,57 +30,15 @@
     }
 
     header {
+      text-align: center;
+      padding: 20px;
       background: #28a745;
       color: white;
-      padding: 15px 20px;
       border-radius: 12px;
       margin-bottom: 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
     }
-    #menuBtn {
-      font-size: 1.5rem;
-      background: none;
-      border: none;
-      color: white;
-      cursor: pointer;
-      display: none;
-    }
-    @media (max-width: 767px) {
-      #menuBtn {
-        display: block;
-      }
-    }
-
-    nav {
-      width: 200px;
-      height: 100vh;
-      background: #333;
-      color: white;
-      position: fixed;
-      top: 0;
-      left: -200px;
-      transition: left 0.3s ease;
-      padding: 60px 10px 0 10px;
-      z-index: 1000;
-    }
-    nav.open {
-      left: 0;
-    }
-    nav ul {
-      list-style: none;
-    }
-    nav a {
-      color: white;
-      text-decoration: none;
-      display: block;
-      padding: 12px;
-      border-radius: 6px;
-      margin: 4px 0;
-    }
-    nav a:hover {
-      background: #555;
+    header h1 {
+      font-size: 1.4rem;
     }
 
     .card {
@@ -104,7 +59,7 @@
       color: #495057;
       margin-bottom: 8px;
     }
-    input {
+    input, select {
       width: 100%;
       padding: 12px;
       font-size: 1rem;
@@ -112,11 +67,12 @@
       border-radius: 8px;
       background-color: #f8f9fa;
     }
-    input:focus {
+    input:focus, select:focus {
       outline: none;
       border-color: #28a745;
       background-color: white;
     }
+
     button {
       display: block;
       width: 100%;
@@ -162,9 +118,6 @@
       font-size: 0.95rem;
       border-bottom: 1px solid #e9ecef;
     }
-    tr:last-child td {
-      border-bottom: none;
-    }
 
     .total-box {
       padding: 12px;
@@ -192,26 +145,6 @@
       margin-top: 16px;
     }
 
-    .tabs {
-      display: flex;
-      margin-bottom: 16px;
-      border-bottom: 1px solid #ddd;
-    }
-    .tab {
-      flex: 1;
-      text-align: center;
-      padding: 12px;
-      background: #e9ecef;
-      border-bottom: 3px solid transparent;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    .tab.active {
-      background: white;
-      border-bottom: 3px solid #28a745;
-      color: #28a745;
-    }
-
     .hidden {
       display: none;
     }
@@ -229,154 +162,111 @@
 </head>
 <body>
 
-  <!-- Écran d'accueil -->
-  <div id="homeScreen" class="container">
+  <!-- Écran de mot de passe -->
+  <div id="loginScreen" class="container">
     <div class="card">
-      <h1 style="text-align:center; color:#28a745;">💼 Gestion Financière</h1>
-      <p style="text-align:center; margin:15px 0;">Suivez vos dépenses et revenus en TND</p>
-      <button class="btn-primary" onclick="showScreen('loginScreen')">Se connecter</button>
+      <h1 style="text-align:center; color:#28a745;"><i class="fas fa-lock"></i> Accès sécurisé</h1>
+      <p style="text-align:center; margin:15px 0;">Entrez le mot de passe pour accéder à l’application</p>
+      <div class="form-group">
+        <input type="password" id="password" placeholder="Mot de passe" />
+      </div>
+      <button class="btn-primary" onclick="checkPassword()">Accéder</button>
     </div>
   </div>
 
-  <!-- Connexion -->
-  <div id="loginScreen" class="container hidden">
-    <div class="card">
-      <h1>🔐 Connexion</h1>
-      <form id="loginForm">
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input type="email" id="email" required />
-        </div>
-        <div class="form-group">
-          <label for="password">Mot de passe</label>
-          <input type="password" id="password" required />
-        </div>
-        <button type="submit" class="btn-primary">Se connecter</button>
-      </form>
-      <p style="margin-top:15px;">
-        <a href="#" onclick="showScreen('registerScreen')">Pas encore inscrit ? S'inscrire</a>
-      </p>
-    </div>
-  </div>
+  <!-- Application -->
+  <div id="app" class="container hidden">
 
-  <!-- Inscription -->
-  <div id="registerScreen" class="container hidden">
-    <div class="card">
-      <h1>📝 Inscription</h1>
-      <form id="registerForm">
-        <div class="form-group">
-          <label for="regEmail">Email</label>
-          <input type="email" id="regEmail" required />
-        </div>
-        <div class="form-group">
-          <label for="regPassword">Mot de passe</label>
-          <input type="password" id="regPassword" required />
-        </div>
-        <div class="form-group">
-          <label for="confirmPassword">Confirmer le mot de passe</label>
-          <input type="password" id="confirmPassword" required />
-        </div>
-        <button type="submit" class="btn-primary">S'inscrire</button>
-      </form>
-      <p style="margin-top:15px;">
-        <a href="#" onclick="showScreen('loginScreen')">Déjà un compte ? Se connecter</a>
-      </p>
-    </div>
-  </div>
-
-  <!-- Dashboard -->
-  <div id="dashboard" class="container hidden">
     <header>
-      <button id="menuBtn">☰</button>
-      <h1>Dashboard</h1>
-      <span id="syncStatus">🟢</span>
+      <h1><i class="fas fa-wallet"></i> MyFinances (TND)</h1>
+      <p>Gestion simple de vos dépenses et revenus</p>
     </header>
 
-    <nav id="sidebar">
-      <ul>
-        <li><a href="#" onclick="showScreen('dashboard')">🏠 Accueil</a></li>
-        <li><a href="#" id="logoutBtn">🚪 Déconnexion</a></li>
-      </ul>
-    </nav>
-
-    <div class="tabs">
-      <div class="tab active" onclick="openTab('depenses')">💸 Dépenses</div>
-      <div class="tab" onclick="openTab('revenus')">💰 Revenus</div>
+    <!-- Ajouter une dépense -->
+    <div class="card">
+      <h2 style="margin-bottom:15px;">➕ Ajouter une dépense</h2>
+      <div class="form-group">
+        <label for="type">Type</label>
+        <select id="type">
+          <option value="Transport">🚗 Transport</option>
+          <option value="Repas">🍽️ Repas</option>
+          <option value="Logement">🏠 Logement</option>
+          <option value="Famille">👨‍👩‍👧‍👦 Famille</option>
+          <option value="Divertissement">☕ Divertissement</option>
+          <option value="Matériel">💻 Matériel</option>
+          <option value="Autre">📦 Autre</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="montant">Montant (TND)</label>
+        <input type="number" id="montant" step="0.001" placeholder="150.000" />
+      </div>
+      <div class="form-group">
+        <label for="dateDepense">Date</label>
+        <input type="date" id="dateDepense" />
+      </div>
+      <button class="btn-primary" onclick="ajouterDepense()">Enregistrer</button>
     </div>
 
-    <!-- Dépenses -->
-    <div id="depenses" class="tab-content active">
-      <div class="card">
-        <h2 style="margin-bottom:15px;">➕ Ajouter une dépense</h2>
-        <div class="form-group">
-          <label for="type">Type</label>
-          <input type="text" id="type" placeholder="Ex: Famille, Transport" />
-        </div>
-        <div class="form-group">
-          <label for="montantDepense">Montant (TND)</label>
-          <input type="number" id="montantDepense" step="0.001" />
-        </div>
-        <div class="form-group">
-          <label for="dateDepense">Date</label>
-          <input type="date" id="dateDepense" />
-        </div>
-        <button class="btn-primary" onclick="ajouterDepense()">Ajouter</button>
-      </div>
-
-      <div class="card">
-        <h2>📊 Historique des dépenses</h2>
-        <table id="depensesTable">
-          <thead>
-            <tr>
-              <th>Type</th>
-              <th>Montant</th>
-              <th>Date</th>
-              <th class="action-cell">Suppr</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-        <div class="total-box total-depenses" id="totalDepenses">
-          Total : 0,000 TND
-        </div>
+    <!-- Historique des dépenses -->
+    <div class="card">
+      <h2>📊 Historique des dépenses</h2>
+      <table id="depensesTable">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Montant</th>
+            <th>Date</th>
+            <th class="action-cell">Suppr</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div class="total-box total-depenses" id="totalDepenses">
+        Total : 0,000 TND
       </div>
     </div>
 
-    <!-- Revenus -->
-    <div id="revenus" class="tab-content">
-      <div class="card">
-        <h2 style="margin-bottom:15px;">➕ Ajouter un revenu</h2>
-        <div class="form-group">
-          <label for="source">Source</label>
-          <input type="text" id="source" placeholder="Ex: Salaire, Freelance" />
-        </div>
-        <div class="form-group">
-          <label for="montantRevenu">Montant (TND)</label>
-          <input type="number" id="montantRevenu" step="0.001" />
-        </div>
-        <div class="form-group">
-          <label for="dateRevenu">Date</label>
-          <input type="date" id="dateRevenu" />
-        </div>
-        <button class="btn-primary" onclick="ajouterRevenu()">Ajouter</button>
+    <!-- Ajouter un revenu -->
+    <div class="card">
+      <h2 style="margin-bottom:15px;">➕ Ajouter un revenu</h2>
+      <div class="form-group">
+        <label for="source">Source</label>
+        <select id="source">
+          <option value="Salaire">💼 Salaire</option>
+          <option value="Freelance">🌐 Freelance</option>
+          <option value="Bonus">🎁 Bonus</option>
+          <option value="Investissement">📈 Investissement</option>
+          <option value="Autre">📦 Autre</option>
+        </select>
       </div>
+      <div class="form-group">
+        <label for="montantRevenu">Montant (TND)</label>
+        <input type="number" id="montantRevenu" step="0.001" placeholder="1000.000" />
+      </div>
+      <div class="form-group">
+        <label for="dateRevenu">Date</label>
+        <input type="date" id="dateRevenu" />
+      </div>
+      <button class="btn-primary" onclick="ajouterRevenu()">Enregistrer</button>
+    </div>
 
-      <div class="card">
-        <h2>📈 Historique des revenus</h2>
-        <table id="revenusTable">
-          <thead>
-            <tr>
-              <th>Source</th>
-              <th>Montant</th>
-              <th>Date</th>
-              <th class="action-cell">Suppr</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-        <div class="total-box total-revenus" id="totalRevenus">
-          Total : 0,000 TND
-        </div>
+    <!-- Historique des revenus -->
+    <div class="card">
+      <h2>📈 Historique des revenus</h2>
+      <table id="revenusTable">
+        <thead>
+          <tr>
+            <th>Source</th>
+            <th>Montant</th>
+            <th>Date</th>
+            <th class="action-cell">Suppr</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div class="total-box total-revenus" id="totalRevenus">
+        Total : 0,000 TND
       </div>
     </div>
 
@@ -388,203 +278,161 @@
     </div>
 
     <footer>
-      💼 Application sécurisée - Fonctionne hors ligne
+      💼 Application 100% locale - Fonctionne hors ligne
     </footer>
   </div>
 
-  <!-- Firebase SDK -->
-  <script type="module">
-    // Import des services Firebase
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-    import { getDatabase, ref, push, set, onValue, remove } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+  <script>
+    // 🔐 Mot de passe unique (tu peux le changer)
+    const MOT_DE_PASSE = "1234"; // ← Change-le ici
 
-    // 🔥 Ta configuration Firebase
-    const firebaseConfig = {
-      apiKey: "AIzaSyDnWAhDsJ8thCMTDngmiiu4zKS-Xc0CZxg",
-      authDomain: "myfinaces-8b1b8.firebaseapp.com",
-      projectId: "myfinaces-8b1b8",
-      storageBucket: "myfinaces-8b1b8.firebasestorage.app",
-      messagingSenderId: "842085053357",
-      appId: "1:842085053357:web:8d308074395f721b64a724"
-    };
+    // Données
+    let depenses = JSON.parse(localStorage.getItem('myfinances-depenses')) || [];
+    let revenus = JSON.parse(localStorage.getItem('myfinances-revenus')) || [];
 
-    // Initialiser Firebase
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth();
-    const database = getDatabase();
-
-    // Éléments DOM
-    const homeScreen = document.getElementById('homeScreen');
-    const loginScreen = document.getElementById('loginScreen');
-    const registerScreen = document.getElementById('registerScreen');
-    const dashboard = document.getElementById('dashboard');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const menuBtn = document.getElementById('menuBtn');
-    const sidebar = document.getElementById('sidebar');
-
-    // Navigation
-    function showScreen(id) {
-      [homeScreen, loginScreen, registerScreen, dashboard].forEach(s => s.classList.add('hidden'));
-      document.getElementById(id).classList.remove('hidden');
+    // Vérifier le mot de passe
+    function checkPassword() {
+      const pwd = document.getElementById('password').value;
+      if (pwd === MOT_DE_PASSE) {
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('app').classList.remove('hidden');
+        afficherDepenses();
+        afficherRevenus();
+        calculerSolde();
+        // Pré-remplir les dates
+        document.getElementById('dateDepense').valueAsDate = new Date();
+        document.getElementById('dateRevenu').valueAsDate = new Date();
+      } else {
+        alert("Mot de passe incorrect !");
+      }
     }
 
-    menuBtn.addEventListener('click', () => {
-      sidebar.classList.toggle('open');
-    });
-
-    // Connexion
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      try {
-        await signInWithEmailAndPassword(auth, email, password);
-      } catch (error) {
-        alert('Erreur : ' + error.message);
-      }
-    });
-
-    // Inscription
-    document.getElementById('registerForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = document.getElementById('regEmail').value;
-      const password = document.getElementById('regPassword').value;
-      const confirmPassword = document.getElementById('confirmPassword').value;
-      if (password !== confirmPassword) {
-        alert('Les mots de passe ne correspondent pas');
-        return;
-      }
-      try {
-        await createUserWithEmailAndPassword(auth, email, password);
-      } catch (error) {
-        alert('Erreur : ' + error.message);
-      }
-    });
-
-    // Déconnexion
-    logoutBtn.addEventListener('click', async () => {
-      await signOut(auth);
-      showScreen('homeScreen');
-    });
-
-    // Écouteur d'authentification
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        const userId = user.uid;
-        const userRef = ref(database, 'users/' + userId);
-        onValue(userRef, (snapshot) => {
-          const data = snapshot.val() || { depenses: [], revenus: [] };
-          const depenses = Object.values(data.depenses || {});
-          const revenus = Object.values(data.revenus || {});
-          afficherDepenses(depenses);
-          afficherRevenus(revenus);
-          calculerSolde(depenses, revenus);
-        });
-        showScreen('dashboard');
-      }
-    });
-
-    // Onglets
-    function openTab(tabName) {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      document.querySelector(`[onclick="openTab('${tabName}')"]`).classList.add('active');
-      document.getElementById(tabName).classList.add('active');
+    // Format TND
+    function formatTND(montant) {
+      return parseFloat(montant).toFixed(3).replace('.', ',');
     }
 
     // Ajouter dépense
     function ajouterDepense() {
       const type = document.getElementById('type').value;
-      const montant = parseFloat(document.getElementById('montantDepense').value);
+      const montant = document.getElementById('montant').value;
       const date = document.getElementById('dateDepense').value;
-      if (!type || !montant || !date) return;
-      const userId = auth.currentUser.uid;
-      const newRef = push(ref(database, 'users/' + userId + '/depenses'));
-      set(newRef, { id: newRef.key, type, montant, date });
+
+      if (!type || !montant || !date) {
+        alert("Veuillez remplir tous les champs.");
+        return;
+      }
+
+      depenses.push({ type, montant: parseFloat(montant).toFixed(3), date });
+      localStorage.setItem('myfinances-depenses', JSON.stringify(depenses));
+      afficherDepenses();
+      calculerSolde();
+
+      // Réinitialiser
+      document.getElementById('montant').value = '';
+      document.getElementById('dateDepense').valueAsDate = new Date();
     }
 
     // Ajouter revenu
     function ajouterRevenu() {
       const source = document.getElementById('source').value;
-      const montant = parseFloat(document.getElementById('montantRevenu').value);
+      const montant = document.getElementById('montantRevenu').value;
       const date = document.getElementById('dateRevenu').value;
-      if (!source || !montant || !date) return;
-      const userId = auth.currentUser.uid;
-      const newRef = push(ref(database, 'users/' + userId + '/revenus'));
-      set(newRef, { id: newRef.key, source, montant, date });
+
+      if (!source || !montant || !date) {
+        alert("Veuillez remplir tous les champs.");
+        return;
+      }
+
+      revenus.push({ source, montant: parseFloat(montant).toFixed(3), date });
+      localStorage.setItem('myfinances-revenus', JSON.stringify(revenus));
+      afficherRevenus();
+      calculerSolde();
+
+      // Réinitialiser
+      document.getElementById('montantRevenu').value = '';
+      document.getElementById('dateRevenu').valueAsDate = new Date();
     }
 
     // Afficher dépenses
-    function afficherDepenses(depenses) {
+    function afficherDepenses() {
       const tbody = document.getElementById('depensesTable').querySelector('tbody');
       tbody.innerHTML = '';
       let total = 0;
-      depenses.forEach(d => {
-        total += d.montant;
+      depenses.forEach((d, i) => {
+        total += parseFloat(d.montant);
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${d.type}</td>
-          <td><strong>${d.montant.toFixed(3)} TND</strong></td>
+          <td><strong>${formatTND(d.montant)} TND</strong></td>
           <td>${d.date}</td>
-          <td class="action-cell"><button class="btn-danger" onclick="supprimer('${d.id}', 'depenses')">🗑️</button></td>
+          <td class="action-cell"><button class="btn-danger" onclick="supprimerDepense(${i})">🗑️</button></td>
         `;
         tbody.appendChild(tr);
       });
-      document.getElementById('totalDepenses').textContent = `Total : ${total.toFixed(3)} TND`;
+      document.getElementById('totalDepenses').textContent = `Total : ${formatTND(total)} TND`;
     }
 
     // Afficher revenus
-    function afficherRevenus(revenus) {
+    function afficherRevenus() {
       const tbody = document.getElementById('revenusTable').querySelector('tbody');
       tbody.innerHTML = '';
       let total = 0;
-      revenus.forEach(r => {
-        total += r.montant;
+      revenus.forEach((r, i) => {
+        total += parseFloat(r.montant);
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${r.source}</td>
-          <td><strong>${r.montant.toFixed(3)} TND</strong></td>
+          <td><strong>${formatTND(r.montant)} TND</strong></td>
           <td>${r.date}</td>
-          <td class="action-cell"><button class="btn-danger" onclick="supprimer('${r.id}', 'revenus')">🗑️</button></td>
+          <td class="action-cell"><button class="btn-danger" onclick="supprimerRevenu(${i})">🗑️</button></td>
         `;
         tbody.appendChild(tr);
       });
-      document.getElementById('totalRevenus').textContent = `Total : ${total.toFixed(3)} TND`;
+      document.getElementById('totalRevenus').textContent = `Total : ${formatTND(total)} TND`;
     }
 
     // Calculer solde
-    function calculerSolde(depenses, revenus) {
-      const totalRev = revenus.reduce((a, b) => a + b.montant, 0);
-      const totalDep = depenses.reduce((a, b) => a + b.montant, 0);
-      document.getElementById('solde').textContent = `Solde : ${(totalRev - totalDep).toFixed(3)} TND`;
+    function calculerSolde() {
+      const totalD = depenses.reduce((a, b) => a + parseFloat(b.montant), 0);
+      const totalR = revenus.reduce((a, b) => a + parseFloat(b.montant), 0);
+      const solde = totalR - totalD;
+      document.getElementById('solde').textContent = `Solde : ${formatTND(solde)} TND`;
     }
 
     // Supprimer
-    window.supprimer = async (id, type) => {
-      if (!confirm('Supprimer cette entrée ?')) return;
-      const userId = auth.currentUser.uid;
-      await remove(ref(database, `users/${userId}/${type}/${id}`));
-    };
-  </script>
-
-  <!-- Service Worker pour PWA -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      const swCode = `
-        const CACHE_NAME = 'budget-tnd-v1';
-        const urlsToCache = ['/', '/index.html'];
-        self.addEventListener('install', e => {
-          e.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache)));
-        });
-        self.addEventListener('fetch', e => {
-          e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
-        });
-      `;
-      const blob = new Blob([swCode], { type: 'application/javascript' });
-      const swURL = URL.createObjectURL(blob);
-      navigator.serviceWorker.register(swURL);
+    function supprimerDepense(index) {
+      if (confirm("Supprimer cette dépense ?")) {
+        depenses.splice(index, 1);
+        localStorage.setItem('myfinances-depenses', JSON.stringify(depenses));
+        afficherDepenses();
+        calculerSolde();
+      }
     }
+    function supprimerRevenu(index) {
+      if (confirm("Supprimer ce revenu ?")) {
+        revenus.splice(index, 1);
+        localStorage.setItem('myfinances-revenus', JSON.stringify(revenus));
+        afficherRevenus();
+        calculerSolde();
+      }
+    }
+
+    // Si déjà connecté (session)
+    window.onload = function() {
+      if (localStorage.getItem('myfinances-logged-in') === 'true') {
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('app').classList.remove('hidden');
+        depenses = JSON.parse(localStorage.getItem('myfinances-depenses')) || [];
+        revenus = JSON.parse(localStorage.getItem('myfinances-revenus')) || [];
+        afficherDepenses();
+        afficherRevenus();
+        calculerSolde();
+      }
+    };
+
+    // Optionnel : garder la session ouverte
+    // Pour se déconnecter, vide le localStorage
   </script>
 </body>
 </html>
