@@ -168,18 +168,20 @@
       <h1 style="text-align:center; color:#28a745;"><i class="fas fa-lock"></i> Accès sécurisé</h1>
       <p style="text-align:center; margin:15px 0;">Entrez le mot de passe pour accéder à l’application</p>
       <div class="form-group">
-        <input type="password" id="password" placeholder="Mot de passe" />
+        <input type="password" id="localPassword" placeholder="Mot de passe local" />
       </div>
-      <button class="btn-primary" onclick="checkPassword()">Accéder</button>
+      <button class="btn-primary" onclick="checkLocalPassword()">Accéder</button>
+      <p style="text-align:center; margin-top:15px;">
+        <small>🔑 Connecté via Google</small>
+      </p>
     </div>
   </div>
 
   <!-- Application -->
   <div id="app" class="container hidden">
-
     <header>
       <h1><i class="fas fa-wallet"></i> MyFinances (TND)</h1>
-      <p>Gestion simple de vos dépenses et revenus</p>
+      <p>Gestion synchronisée de vos dépenses et revenus</p>
     </header>
 
     <!-- Ajouter une dépense -->
@@ -278,33 +280,60 @@
     </div>
 
     <footer>
-      💼 Application 100% locale - Fonctionne hors ligne
+      💼 Synchronisé via Firebase - Accès depuis tous vos appareils
     </footer>
   </div>
 
-  <script>
-    // 🔐 Mot de passe unique (tu peux le changer)
-    const MOT_DE_PASSE = "1234"; // ← Change-le ici
+  <!-- Firebase SDK -->
+  <script type="module">
+    // Import Firebase
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js';
+    import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js';
+    import { getDatabase, ref, onValue, set, push, remove } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js';
 
-    // Données
-    let depenses = JSON.parse(localStorage.getItem('myfinances-depenses')) || [];
-    let revenus = JSON.parse(localStorage.getItem('myfinances-revenus')) || [];
+    // 🔥 Ta configuration Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyDnWAhDsJ8thCMTDngmiiu4zKS-Xc0CZxg",
+      authDomain: "myfinaces-8b1b8.firebaseapp.com",
+      projectId: "myfinaces-8b1b8",
+      storageBucket: "myfinaces-8b1b8.firebasestorage.app",
+      messagingSenderId: "842085053357",
+      appId: "1:842085053357:web:8d308074395f721b64a724"
+    };
 
-    // Vérifier le mot de passe
-    function checkPassword() {
-      const pwd = document.getElementById('password').value;
-      if (pwd === MOT_DE_PASSE) {
-        document.getElementById('loginScreen').classList.add('hidden');
-        document.getElementById('app').classList.remove('hidden');
-        afficherDepenses();
-        afficherRevenus();
-        calculerSolde();
-        // Pré-remplir les dates
-        document.getElementById('dateDepense').valueAsDate = new Date();
-        document.getElementById('dateRevenu').valueAsDate = new Date();
+    // Initialiser Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth();
+    const database = getDatabase();
+
+    // Éléments DOM
+    const loginScreen = document.getElementById('loginScreen');
+    const appScreen = document.getElementById('app');
+
+    // 🔐 Mot de passe local (uniquement pour accéder à l'interface)
+    const MOT_DE_PASSE_LOCAL = "1234"; // ← Change-le ici
+
+    // Données locales
+    let depenses = {};
+    let revenus = {};
+
+    // Vérifier le mot de passe local
+    window.checkLocalPassword = function() {
+      const pwd = document.getElementById('localPassword').value;
+      if (pwd === MOT_DE_PASSE_LOCAL) {
+        // Mot de passe local OK → tente la connexion Google
+        loginWithGoogle();
       } else {
         alert("Mot de passe incorrect !");
       }
+    };
+
+    // Connexion Google
+    function loginWithGoogle() {
+      const provider = new GoogleAuthProvider();
+      signInWithPopup(auth, provider).catch((error) => {
+        alert("Erreur de connexion Google : " + error.message);
+      });
     }
 
     // Format TND
@@ -313,7 +342,7 @@
     }
 
     // Ajouter dépense
-    function ajouterDepense() {
+    window.ajouterDepense = function() {
       const type = document.getElementById('type').value;
       const montant = document.getElementById('montant').value;
       const date = document.getElementById('dateDepense').value;
@@ -323,18 +352,21 @@
         return;
       }
 
-      depenses.push({ type, montant: parseFloat(montant).toFixed(3), date });
-      localStorage.setItem('myfinances-depenses', JSON.stringify(depenses));
-      afficherDepenses();
-      calculerSolde();
+      const userId = auth.currentUser.uid;
+      const newRef = push(ref(database, 'users/' + userId + '/depenses'));
+      set(newRef, {
+        id: newRef.key,
+        type,
+        montant: parseFloat(montant).toFixed(3),
+        date
+      });
 
-      // Réinitialiser
       document.getElementById('montant').value = '';
       document.getElementById('dateDepense').valueAsDate = new Date();
-    }
+    };
 
     // Ajouter revenu
-    function ajouterRevenu() {
+    window.ajouterRevenu = function() {
       const source = document.getElementById('source').value;
       const montant = document.getElementById('montantRevenu').value;
       const date = document.getElementById('dateRevenu').value;
@@ -344,29 +376,32 @@
         return;
       }
 
-      revenus.push({ source, montant: parseFloat(montant).toFixed(3), date });
-      localStorage.setItem('myfinances-revenus', JSON.stringify(revenus));
-      afficherRevenus();
-      calculerSolde();
+      const userId = auth.currentUser.uid;
+      const newRef = push(ref(database, 'users/' + userId + '/revenus'));
+      set(newRef, {
+        id: newRef.key,
+        source,
+        montant: parseFloat(montant).toFixed(3),
+        date
+      });
 
-      // Réinitialiser
       document.getElementById('montantRevenu').value = '';
       document.getElementById('dateRevenu').valueAsDate = new Date();
-    }
+    };
 
     // Afficher dépenses
-    function afficherDepenses() {
+    function afficherDepenses(data) {
       const tbody = document.getElementById('depensesTable').querySelector('tbody');
       tbody.innerHTML = '';
       let total = 0;
-      depenses.forEach((d, i) => {
+      Object.values(data || {}).forEach(d => {
         total += parseFloat(d.montant);
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${d.type}</td>
           <td><strong>${formatTND(d.montant)} TND</strong></td>
           <td>${d.date}</td>
-          <td class="action-cell"><button class="btn-danger" onclick="supprimerDepense(${i})">🗑️</button></td>
+          <td class="action-cell"><button class="btn-danger" onclick="supprimer('${d.id}', 'depenses')">🗑️</button></td>
         `;
         tbody.appendChild(tr);
       });
@@ -374,18 +409,18 @@
     }
 
     // Afficher revenus
-    function afficherRevenus() {
+    function afficherRevenus(data) {
       const tbody = document.getElementById('revenusTable').querySelector('tbody');
       tbody.innerHTML = '';
       let total = 0;
-      revenus.forEach((r, i) => {
+      Object.values(data || {}).forEach(r => {
         total += parseFloat(r.montant);
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${r.source}</td>
           <td><strong>${formatTND(r.montant)} TND</strong></td>
           <td>${r.date}</td>
-          <td class="action-cell"><button class="btn-danger" onclick="supprimerRevenu(${i})">🗑️</button></td>
+          <td class="action-cell"><button class="btn-danger" onclick="supprimer('${r.id}', 'revenus')">🗑️</button></td>
         `;
         tbody.appendChild(tr);
       });
@@ -393,46 +428,49 @@
     }
 
     // Calculer solde
-    function calculerSolde() {
-      const totalD = depenses.reduce((a, b) => a + parseFloat(b.montant), 0);
-      const totalR = revenus.reduce((a, b) => a + parseFloat(b.montant), 0);
+    function calculerSolde(depenses, revenus) {
+      const totalD = Object.values(depenses || {}).reduce((a, b) => a + parseFloat(b.montant), 0);
+      const totalR = Object.values(revenus || {}).reduce((a, b) => a + parseFloat(b.montant), 0);
       const solde = totalR - totalD;
       document.getElementById('solde').textContent = `Solde : ${formatTND(solde)} TND`;
     }
 
     // Supprimer
-    function supprimerDepense(index) {
-      if (confirm("Supprimer cette dépense ?")) {
-        depenses.splice(index, 1);
-        localStorage.setItem('myfinances-depenses', JSON.stringify(depenses));
-        afficherDepenses();
-        calculerSolde();
-      }
-    }
-    function supprimerRevenu(index) {
-      if (confirm("Supprimer ce revenu ?")) {
-        revenus.splice(index, 1);
-        localStorage.setItem('myfinances-revenus', JSON.stringify(revenus));
-        afficherRevenus();
-        calculerSolde();
-      }
-    }
-
-    // Si déjà connecté (session)
-    window.onload = function() {
-      if (localStorage.getItem('myfinances-logged-in') === 'true') {
-        document.getElementById('loginScreen').classList.add('hidden');
-        document.getElementById('app').classList.remove('hidden');
-        depenses = JSON.parse(localStorage.getItem('myfinances-depenses')) || [];
-        revenus = JSON.parse(localStorage.getItem('myfinances-revenus')) || [];
-        afficherDepenses();
-        afficherRevenus();
-        calculerSolde();
-      }
+    window.supprimer = function(id, type) {
+      if (!confirm("Supprimer ?")) return;
+      const userId = auth.currentUser.uid;
+      remove(ref(database, `users/${userId}/${type}/${id}`));
     };
 
-    // Optionnel : garder la session ouverte
-    // Pour se déconnecter, vide le localStorage
+    // Écouteur d'authentification
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        const userId = user.uid;
+        const userRef = ref(database, 'users/' + userId);
+
+        // Charger les données
+        onValue(userRef, (snapshot) => {
+          const data = snapshot.val() || { depenses: {}, revenus: {} };
+          depenses = data.depenses || {};
+          revenus = data.revenus || {};
+          afficherDepenses(depenses);
+          afficherRevenus(revenus);
+          calculerSolde(depenses, revenus);
+        });
+
+        // Afficher l'app
+        loginScreen.classList.add('hidden');
+        appScreen.classList.remove('hidden');
+      } else {
+        // Forcer la connexion
+        loginScreen.classList.remove('hidden');
+        appScreen.classList.add('hidden');
+      }
+    });
+
+    // Pré-remplir les dates
+    document.getElementById('dateDepense').valueAsDate = new Date();
+    document.getElementById('dateRevenu').valueAsDate = new Date();
   </script>
 </body>
 </html>
