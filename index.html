@@ -166,12 +166,13 @@
 </head>
 <body>
 
-  <!-- Écran de connexion -->
+  <!-- Écran d'authentification -->
   <div id="authScreen" class="container">
     <div class="card">
       <h1 style="text-align:center; color:#28a745;"><i class="fas fa-user-shield"></i> Connexion</h1>
-      <p style="text-align:center; margin:15px 0;">Connectez-vous pour accéder à votre tableau de bord</p>
+      <p style="text-align:center; margin:15px 0;">Accédez à votre gestion financière</p>
 
+      <!-- Formulaire de connexion -->
       <div id="loginForm">
         <div class="form-group">
           <label for="email">Email</label>
@@ -187,6 +188,7 @@
         </p>
       </div>
 
+      <!-- Formulaire d'inscription -->
       <div id="registerForm" class="hidden">
         <div class="form-group">
           <label for="regEmail">Email</label>
@@ -206,6 +208,7 @@
         </p>
       </div>
 
+      <!-- Message d'erreur -->
       <div id="authError" style="color: #dc3545; text-align: center; margin-top: 10px; display: none;"></div>
     </div>
   </div>
@@ -313,7 +316,9 @@
     </div>
 
     <footer>
-      💼 Synchronisé via Firebase - Accès depuis tous vos appareils
+      <button onclick="deconnexion()" style="background:#dc3545; color:white; border:none; padding:10px; border-radius:6px; cursor:pointer;">
+        🔐 Déconnexion
+      </button>
     </footer>
   </div>
 
@@ -347,18 +352,24 @@
     let depenses = {};
     let revenus = {};
 
-    // Navigation entre login/inscription
+    // Navigation entre formulaires
     window.showRegister = function() {
       document.getElementById('loginForm').classList.add('hidden');
       document.getElementById('registerForm').classList.remove('hidden');
-      document.getElementById('authError').style.display = 'none';
+      clearError();
     };
 
     window.showLogin = function() {
       document.getElementById('registerForm').classList.add('hidden');
       document.getElementById('loginForm').classList.remove('hidden');
-      document.getElementById('authError').style.display = 'none';
+      clearError();
     };
+
+    function clearError() {
+      const errorDiv = document.getElementById('authError');
+      errorDiv.style.display = 'none';
+      errorDiv.textContent = '';
+    }
 
     // Connexion
     window.login = function() {
@@ -367,11 +378,18 @@
       const errorDiv = document.getElementById('authError');
 
       signInWithEmailAndPassword(auth, email, password)
-        .then(() => {
-          // Connexion réussie
-        })
         .catch((error) => {
-          errorDiv.textContent = error.message;
+          let message = error.message;
+          if (error.code === 'auth/user-not-found') {
+            message = 'Utilisateur non trouvé.';
+          } else if (error.code === 'auth/wrong-password') {
+            message = 'Mot de passe incorrect.';
+          } else if (error.code === 'auth/invalid-email') {
+            message = 'Email invalide.';
+          } else if (error.code === 'auth/operation-not-allowed') {
+            message = 'Méthode désactivée. Activez "Email/Mot de passe" dans Firebase.';
+          }
+          errorDiv.textContent = message;
           errorDiv.style.display = 'block';
         });
     };
@@ -384,17 +402,28 @@
       const errorDiv = document.getElementById('authError');
 
       if (password !== confirmPassword) {
-        errorDiv.textContent = 'Les mots de passe ne correspondent pas';
+        errorDiv.textContent = 'Les mots de passe ne correspondent pas.';
+        errorDiv.style.display = 'block';
+        return;
+      }
+
+      if (password.length < 6) {
+        errorDiv.textContent = 'Le mot de passe doit contenir au moins 6 caractères.';
         errorDiv.style.display = 'block';
         return;
       }
 
       createUserWithEmailAndPassword(auth, email, password)
-        .then(() => {
-          // Création réussie
-        })
         .catch((error) => {
-          errorDiv.textContent = error.message;
+          let message = error.message;
+          if (error.code === 'auth/email-already-in-use') {
+            message = 'Cet email est déjà utilisé.';
+          } else if (error.code === 'auth/invalid-email') {
+            message = 'Email invalide.';
+          } else if (error.code === 'auth/operation-not-allowed') {
+            message = 'Méthode désactivée. Activez "Email/Mot de passe" dans Firebase.';
+          }
+          errorDiv.textContent = message;
           errorDiv.style.display = 'block';
         });
     };
@@ -500,9 +529,16 @@
 
     // Supprimer
     window.supprimer = function(id, type) {
-      if (!confirm("Supprimer ?")) return;
+      if (!confirm("Supprimer cette entrée ?")) return;
       const userId = auth.currentUser.uid;
       remove(ref(database, `users/${userId}/${type}/${id}`));
+    };
+
+    // Déconnexion
+    window.deconnexion = function() {
+      signOut(auth).then(() => {
+        alert("Déconnexion réussie");
+      });
     };
 
     // Écouteur d'authentification
