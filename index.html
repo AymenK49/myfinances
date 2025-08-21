@@ -92,6 +92,10 @@
     .btn-primary:hover {
       background-color: #218838;
     }
+    .btn-secondary {
+      background-color: #17a2b8;
+      color: white;
+    }
     .btn-danger {
       background-color: #dc3545;
       color: white;
@@ -162,18 +166,47 @@
 </head>
 <body>
 
-  <!-- Écran de mot de passe -->
-  <div id="loginScreen" class="container">
+  <!-- Écran de connexion -->
+  <div id="authScreen" class="container">
     <div class="card">
-      <h1 style="text-align:center; color:#28a745;"><i class="fas fa-lock"></i> Accès sécurisé</h1>
-      <p style="text-align:center; margin:15px 0;">Entrez le mot de passe pour accéder à l’application</p>
-      <div class="form-group">
-        <input type="password" id="localPassword" placeholder="Mot de passe local" />
+      <h1 style="text-align:center; color:#28a745;"><i class="fas fa-user-shield"></i> Connexion</h1>
+      <p style="text-align:center; margin:15px 0;">Connectez-vous pour accéder à votre tableau de bord</p>
+
+      <div id="loginForm">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="votre@email.com" required />
+        </div>
+        <div class="form-group">
+          <label for="password">Mot de passe</label>
+          <input type="password" id="password" required />
+        </div>
+        <button class="btn-primary" onclick="login()">Se connecter</button>
+        <p style="text-align:center; margin-top:15px;">
+          <a href="#" onclick="showRegister()">Pas de compte ? S'inscrire</a>
+        </p>
       </div>
-      <button class="btn-primary" onclick="checkLocalPassword()">Accéder</button>
-      <p style="text-align:center; margin-top:15px;">
-        <small>🔑 Connecté via Google</small>
-      </p>
+
+      <div id="registerForm" class="hidden">
+        <div class="form-group">
+          <label for="regEmail">Email</label>
+          <input type="email" id="regEmail" placeholder="votre@email.com" required />
+        </div>
+        <div class="form-group">
+          <label for="regPassword">Mot de passe</label>
+          <input type="password" id="regPassword" required />
+        </div>
+        <div class="form-group">
+          <label for="confirmPassword">Confirmer le mot de passe</label>
+          <input type="password" id="confirmPassword" required />
+        </div>
+        <button class="btn-primary" onclick="register()">S'inscrire</button>
+        <p style="text-align:center; margin-top:15px;">
+          <a href="#" onclick="showLogin()">Déjà un compte ? Se connecter</a>
+        </p>
+      </div>
+
+      <div id="authError" style="color: #dc3545; text-align: center; margin-top: 10px; display: none;"></div>
     </div>
   </div>
 
@@ -288,7 +321,7 @@
   <script type="module">
     // Import Firebase
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js';
-    import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js';
+    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js';
     import { getDatabase, ref, onValue, set, push, remove } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js';
 
     // 🔥 Ta configuration Firebase
@@ -307,34 +340,64 @@
     const database = getDatabase();
 
     // Éléments DOM
-    const loginScreen = document.getElementById('loginScreen');
+    const authScreen = document.getElementById('authScreen');
     const appScreen = document.getElementById('app');
-
-    // 🔐 Mot de passe local (uniquement pour accéder à l'interface)
-    const MOT_DE_PASSE_LOCAL = "1234"; // ← Change-le ici
 
     // Données locales
     let depenses = {};
     let revenus = {};
 
-    // Vérifier le mot de passe local
-    window.checkLocalPassword = function() {
-      const pwd = document.getElementById('localPassword').value;
-      if (pwd === MOT_DE_PASSE_LOCAL) {
-        // Mot de passe local OK → tente la connexion Google
-        loginWithGoogle();
-      } else {
-        alert("Mot de passe incorrect !");
-      }
+    // Navigation entre login/inscription
+    window.showRegister = function() {
+      document.getElementById('loginForm').classList.add('hidden');
+      document.getElementById('registerForm').classList.remove('hidden');
+      document.getElementById('authError').style.display = 'none';
     };
 
-    // Connexion Google
-    function loginWithGoogle() {
-      const provider = new GoogleAuthProvider();
-      signInWithPopup(auth, provider).catch((error) => {
-        alert("Erreur de connexion Google : " + error.message);
-      });
-    }
+    window.showLogin = function() {
+      document.getElementById('registerForm').classList.add('hidden');
+      document.getElementById('loginForm').classList.remove('hidden');
+      document.getElementById('authError').style.display = 'none';
+    };
+
+    // Connexion
+    window.login = function() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const errorDiv = document.getElementById('authError');
+
+      signInWithEmailAndPassword(auth, email, password)
+        .then(() => {
+          // Connexion réussie
+        })
+        .catch((error) => {
+          errorDiv.textContent = error.message;
+          errorDiv.style.display = 'block';
+        });
+    };
+
+    // Inscription
+    window.register = function() {
+      const email = document.getElementById('regEmail').value;
+      const password = document.getElementById('regPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      const errorDiv = document.getElementById('authError');
+
+      if (password !== confirmPassword) {
+        errorDiv.textContent = 'Les mots de passe ne correspondent pas';
+        errorDiv.style.display = 'block';
+        return;
+      }
+
+      createUserWithEmailAndPassword(auth, email, password)
+        .then(() => {
+          // Création réussie
+        })
+        .catch((error) => {
+          errorDiv.textContent = error.message;
+          errorDiv.style.display = 'block';
+        });
+    };
 
     // Format TND
     function formatTND(montant) {
@@ -459,11 +522,11 @@
         });
 
         // Afficher l'app
-        loginScreen.classList.add('hidden');
+        authScreen.classList.add('hidden');
         appScreen.classList.remove('hidden');
       } else {
-        // Forcer la connexion
-        loginScreen.classList.remove('hidden');
+        // Montrer l'écran de connexion
+        authScreen.classList.remove('hidden');
         appScreen.classList.add('hidden');
       }
     });
