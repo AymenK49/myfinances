@@ -164,9 +164,6 @@
       margin-top: 30px;
       padding: 10px;
     }
-    .hidden {
-      display: none;
-    }
   </style>
 </head>
 <body>
@@ -175,7 +172,7 @@
 
     <header>
       <h1><i class="fas fa-wallet"></i> MyFinances (TND)</h1>
-      <p>Gestion simple - Données stockées dans Firebase (sans auth)</p>
+      <p>Gestion simple de vos dépenses et revenus</p>
     </header>
 
     <!-- Ajouter une dépense -->
@@ -262,33 +259,20 @@
     </div>
 
     <footer>
-      💼 Accès direct à la base de données - À utiliser pour tests uniquement
+      💼 Application 100% locale - Fonctionne hors ligne
     </footer>
+
   </div>
 
-  <!-- Firebase SDK -->
-  <script type="module">
-    // Import Firebase
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js';
-    import { getDatabase, ref, onValue, set, push, remove } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js';
-
-    // 🔥 Ta configuration Firebase
-    const firebaseConfig = {
-      apiKey: "AIzaSyDnWAhDsJ8thCMTDngmiiu4zKS-Xc0CZxg",
-      authDomain: "myfinaces-8b1b8.firebaseapp.com",
-      projectId: "myfinaces-8b1b8",
-      storageBucket: "myfinaces-8b1b8.firebasestorage.app",
-      messagingSenderId: "842085053357",
-      appId: "1:842085053357:web:8d308074395f721b64a724"
-    };
-
-    // Initialiser Firebase
-    const app = initializeApp(firebaseConfig);
-    const database = getDatabase();
-
+  <script>
     // Données locales
-    let depenses = [];
-    let revenus = [];
+    let depenses = JSON.parse(localStorage.getItem('myfinances-depenses')) || [];
+    let revenus = JSON.parse(localStorage.getItem('myfinances-revenus')) || [];
+
+    // Format TND
+    function formatTND(montant) {
+      return parseFloat(montant).toFixed(3).replace('.', ',');
+    }
 
     // Afficher/Masquer champ "Autre" pour les dépenses
     window.toggleAutreDepense = function() {
@@ -325,14 +309,14 @@
         return;
       }
 
-      const newRef = push(ref(database, 'public/depenses'));
-      set(newRef, {
-        id: newRef.key,
-        type: typeFinal,
-        montant: parseFloat(montant).toFixed(3),
-        date
-      });
+      depenses.push({ type: typeFinal, montant: parseFloat(montant).toFixed(3), date });
+      localStorage.setItem('myfinances-depenses', JSON.stringify(depenses));
+      afficherHistoriqueParJour([...depenses, ...revenus]);
+      afficherHistoriqueParMois([...depenses, ...revenus]);
+      afficherGraphique([...depenses, ...revenus]);
+      calculerSolde();
 
+      // Réinitialiser
       document.getElementById('montant').value = '';
       document.getElementById('dateDepense').valueAsDate = new Date();
       document.getElementById('autreDepense').value = '';
@@ -352,36 +336,195 @@
         return;
       }
 
-      const newRef = push(ref(database, 'public/revenus'));
-      set(newRef, {
-        id: newRef.key,
-        source: sourceFinal,
-        montant: parseFloat(montant).toFixed(3),
-        date
-      });
+      revenus.push({ source: sourceFinal, montant: parseFloat(montant).toFixed(3), date });
+      localStorage.setItem('myfinances-revenus', JSON.stringify(revenus));
+      afficherHistoriqueParJour([...depenses, ...revenus]);
+      afficherHistoriqueParMois([...depenses, ...revenus]);
+      afficherGraphique([...depenses, ...revenus]);
+      calculerSolde();
 
+      // Réinitialiser
       document.getElementById('montantRevenu').value = '';
       document.getElementById('dateRevenu').valueAsDate = new Date();
       document.getElementById('autreRevenu').value = '';
       document.getElementById('autreRevenuDiv').classList.add('hidden');
     };
 
-    // Supprimer
-    window.supprimer = function(id, type) {
-      if (!confirm("Supprimer ?")) return;
-      remove(ref(database, `public/${type}/${id}`));
-    };
+    // Calculer solde
+    function calculerSolde() {
+      const totalD = depenses.reduce((a, b) => a + parseFloat(b.montant), 0);
+      const totalR = revenus.reduce((a, b) => a + parseFloat(b.montant), 0);
+      const solde = totalR - totalD;
+      document.getElementById('solde').textContent = `Solde : ${formatTND(solde)} TND`;
+    }
 
-    // Écouteur de données
-    onValue(ref(database, 'public/depenses'), (snapshot) => {
-      const data = snapshot.val() || {};
-      depenses = Object.values(data);
+    // Historique par jour (avec total quotidien)
+    function afficherHistoriqueParJour(transactions) {
+      const container = document.getElementById('dailyHistory');
+      container.innerHTML = '';
+
+      const sorted = transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+      const byDay = {};
+
+      // Grouper par jour
+      sorted.forEach(t => {
+        const day = t.date;
+        if (!byDay[day]) byDay[day] = { depenses: [], revenus: [] };
+        if (t.type) {
+          byDay[day].depenses.push(t);
+        } else {
+          byDay[day].revenus.push(t);
+        }
+      });
+
+      // Afficher chaque jour
+      for (const day in byDay) {
+        const data = byDay[day];
+        const totalDepenses = data.depenses.reduce((a, b) => a + parseFloat(b.montant), 0);
+        const totalRevenus = data.revenus.reduce((a, b) => a + parseFloat(b.montant), 0);
+        const soldeJour = totalRevenus - totalDepenses;
+
+        const div = document.createElement('div');
+        div.innerHTML = `<h4>${day}</h4>`;
+
+        // Tableau des dépenses
+        if (data.depenses.length > 0) {
+          const tableD = document.createElement('table');
+          tableD.innerHTML = '<thead><tr><th>Dépense</th><th>Montant</th></tr></thead><tbody>';
+          data.depenses.forEach(d => {
+            tableD.innerHTML += `<tr><td>${d.type}</td><td class="total-depenses">${formatTND(d.montant)} TND</td></tr>`;
+          });
+          tableD.innerHTML += '</tbody>';
+          div.appendChild(tableD);
+        }
+
+        // Tableau des revenus
+        if (data.revenus.length > 0) {
+          const tableR = document.createElement('table');
+          tableR.innerHTML = '<thead><tr><th>Revenu</th><th>Montant</th></tr></thead><tbody>';
+          data.revenus.forEach(r => {
+            tableR.innerHTML += `<tr><td>${r.source}</td><td class="total-revenus">${formatTND(r.montant)} TND</td></tr>`;
+          });
+          tableR.innerHTML += '</tbody>';
+          div.appendChild(tableR);
+        }
+
+        // Résumé quotidien
+        div.innerHTML += `
+          <div class="daily-summary">
+            <p><strong>Total dépenses :</strong> ${formatTND(totalDepenses)} TND</p>
+            <p><strong>Total revenus :</strong> ${formatTND(totalRevenus)} TND</p>
+            <p><strong>Solde du jour :</strong> ${formatTND(soldeJour)} TND</p>
+          </div>
+        `;
+
+        container.appendChild(div);
+      }
+    }
+
+    // Historique par mois
+    function afficherHistoriqueParMois(transactions) {
+      const container = document.getElementById('monthlyHistory');
+      container.innerHTML = '';
+
+      const byMonth = {};
+      transactions.forEach(t => {
+        const mois = t.date.substring(0, 7);
+        if (!byMonth[mois]) byMonth[mois] = { depenses: 0, revenus: 0 };
+        if (t.type) {
+          byMonth[mois].depenses += parseFloat(t.montant);
+        } else {
+          byMonth[mois].revenus += parseFloat(t.montant);
+        }
+      });
+
+      for (const mois in byMonth) {
+        const d = byMonth[mois].depenses.toFixed(3);
+        const r = byMonth[mois].revenus.toFixed(3);
+        const solde = (r - d).toFixed(3);
+        const div = document.createElement('div');
+        div.innerHTML = `
+          <h4>${mois}</h4>
+          <p><strong>Dépenses :</strong> ${formatTND(d)} TND</p>
+          <p><strong>Revenus :</strong> ${formatTND(r)} TND</p>
+          <p><strong>Solde :</strong> ${formatTND(solde)} TND</p>
+          <hr>
+        `;
+        container.appendChild(div);
+      }
+    }
+
+    // Graphique mensuel
+    let chart = null;
+    function afficherGraphique(transactions) {
+      const ctx = document.getElementById('monthlyChart').getContext('2d');
+
+      const byMonth = {};
+      transactions.forEach(t => {
+        const mois = t.date.substring(0, 7);
+        if (!byMonth[mois]) byMonth[mois] = { depenses: 0, revenus: 0 };
+        if (t.type) {
+          byMonth[mois].depenses += parseFloat(t.montant);
+        } else {
+          byMonth[mois].revenus += parseFloat(t.montant);
+        }
+      });
+
+      const mois = Object.keys(byMonth).sort();
+      const depenses = mois.map(m => byMonth[m].depenses);
+      const revenus = mois.map(m => byMonth[m].revenus);
+
+      if (chart) chart.destroy();
+
+      chart = new Chart(ctx, {
+        type: 'bar',
+         {
+          labels: mois,
+          datasets: [
+            {
+              label: 'Dépenses (TND)',
+              data: depenses,
+              backgroundColor: 'rgba(220, 53, 69, 0.7)',
+              borderColor: 'rgba(220, 53, 69, 1)',
+              borderWidth: 1
+            },
+            {
+              label: 'Revenus (TND)',
+               revenus,
+              backgroundColor: 'rgba(40, 167, 69, 0.7)',
+              borderColor: 'rgba(40, 167, 69, 1)',
+              borderWidth: 1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+
+    // Pré-remplir les dates
+    document.getElementById('dateDepense').valueAsDate = new Date();
+    document.getElementById('dateRevenu').valueAsDate = new Date();
+
+    // Charger les données au démarrage
+    window.onload = function() {
       afficherHistoriqueParJour([...depenses, ...revenus]);
       afficherHistoriqueParMois([...depenses, ...revenus]);
       afficherGraphique([...depenses, ...revenus]);
       calculerSolde();
-    });
+    };
+  </script>
 
-    onValue(ref(database, 'public/revenus'), (snapshot) => {
-      const data = snapshot.val() || {};
-      revenus = Object.values
+  <style>
+    .hidden {
+      display: none;
+    }
+  </style>
+</body>
+</html>
