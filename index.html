@@ -167,9 +167,45 @@
     .hidden {
       display: none;
     }
+    /* Indicateur de synchronisation */
+    .sync-indicator {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      padding: 10px 15px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .sync-connected {
+      background: #28a745;
+      color: white;
+    }
+    .sync-loading {
+      background: #007bff;
+      color: white;
+    }
+    .sync-error {
+      background: #dc3545;
+      color: white;
+    }
+    .sync-offline {
+      background: #6c757d;
+      color: white;
+    }
   </style>
 </head>
 <body>
+
+  <!-- Indicateur de synchronisation -->
+  <div id="syncIndicator" class="sync-indicator sync-loading">
+    <i class="fas fa-spinner fa-spin"></i>
+    <span class="ml-2">Initialisation...</span>
+  </div>
 
   <!-- Écran de connexion -->
   <div id="authScreen" class="container">
@@ -189,10 +225,6 @@
 
       <!-- Message d'erreur -->
       <div id="authError" style="color: #dc3545; text-align: center; margin-top: 10px; display: none;"></div>
-      
-      <p style="text-align:center; margin-top:15px; font-size:0.9rem; color:#6c757d;">
-        🔐 Accès réservé - Aucune inscription possible
-      </p>
     </div>
   </div>
 
@@ -301,7 +333,7 @@
     import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js';
     import { getDatabase, ref, onValue, set, push, remove } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js';
 
-    // 🔥 Ta configuration Firebase
+    // 🔥 Ta configuration Firebase (à remplacer par la tienne)
     const firebaseConfig = {
       apiKey: "AIzaSyDnWAhDsJ8thCMTDngmiiu4zKS-Xc0CZxg",
       authDomain: "myfinaces-8b1b8.firebaseapp.com",
@@ -312,9 +344,42 @@
     };
 
     // Initialiser Firebase
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth();
-    const database = getDatabase();
+    let app, auth, database;
+    let firebaseInitialized = false;
+
+    try {
+      app = initializeApp(firebaseConfig);
+      auth = getAuth();
+      database = getDatabase();
+      firebaseInitialized = true;
+      console.log("Firebase initialisé avec succès");
+      updateSyncIndicator('connecté', 'Connexion Firebase réussie');
+    } catch (error) {
+      console.error('Erreur d’initialisation Firebase:', error);
+      updateSyncIndicator('erreur', 'Firebase non disponible');
+    }
+
+    // Fonction pour mettre à jour l'indicateur
+    function updateSyncIndicator(status, message = '') {
+      const indicator = document.getElementById('syncIndicator');
+      indicator.className = 'sync-indicator';
+      if (status === 'connecté') {
+        indicator.classList.add('sync-connected');
+        indicator.innerHTML = '<i class="fas fa-wifi"></i><span class="ml-2">Connecté</span>';
+      } else if (status === 'chargement' || status === 'connexion') {
+        indicator.classList.add('sync-loading');
+        indicator.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span class="ml-2">Chargement...</span>';
+      } else if (status === 'erreur') {
+        indicator.classList.add('sync-error');
+        indicator.innerHTML = '<i class="fas fa-exclamation-circle"></i><span class="ml-2">Erreur</span>';
+      } else if (status === 'hors ligne') {
+        indicator.classList.add('sync-offline');
+        indicator.innerHTML = '<i class="fas fa-wifi"></i><span class="ml-2">Hors ligne</span>';
+      }
+      if (message) {
+        indicator.innerHTML += `<span class="ml-2">• ${message}</span>`;
+      }
+    }
 
     // Éléments DOM
     const authScreen = document.getElementById('authScreen');
@@ -330,11 +395,10 @@
       const password = document.getElementById('password').value;
       const errorDiv = document.getElementById('authError');
 
-      // Vider l'erreur
       errorDiv.style.display = 'none';
       errorDiv.textContent = '';
+      updateSyncIndicator('connexion', 'Connexion en cours...');
 
-      // Tenter la connexion
       signInWithEmailAndPassword(auth, email, password)
         .catch((error) => {
           let message = error.message;
@@ -344,11 +408,10 @@
             message = 'Mot de passe incorrect.';
           } else if (error.code === 'auth/invalid-email') {
             message = 'Email invalide.';
-          } else if (error.code === 'auth/operation-not-allowed') {
-            message = 'Méthode désactivée. Activez "Email/Mot de passe" dans Firebase.';
           }
           errorDiv.textContent = message;
           errorDiv.style.display = 'block';
+          updateSyncIndicator('erreur', 'Échec de connexion');
         });
     };
 
@@ -437,18 +500,21 @@
 
     // Déconnexion
     window.deconnexion = function() {
+      updateSyncIndicator('chargement', 'Déconnexion...');
       signOut(auth).then(() => {
-        alert("Déconnexion réussie");
+        updateSyncIndicator('hors ligne', 'Déconnecté');
+      }).catch(() => {
+        updateSyncIndicator('erreur', 'Échec de déconnexion');
       });
     };
 
     // Écouteur d'authentification
     onAuthStateChanged(auth, (user) => {
       if (user) {
+        updateSyncIndicator('connecté', 'Connecté en tant que ' + user.email);
         const userId = user.uid;
         const userRef = ref(database, 'users/' + userId);
 
-        // Charger les données
         onValue(userRef, (snapshot) => {
           const data = snapshot.val() || { depenses: {}, revenus: {} };
           depenses = Object.values(data.depenses || {});
@@ -459,13 +525,12 @@
           calculerSolde(depenses, revenus);
         });
 
-        // Afficher l'app
         authScreen.classList.add('hidden');
         appScreen.classList.remove('hidden');
       } else {
-        // Montrer l'écran de connexion
         authScreen.classList.remove('hidden');
         appScreen.classList.add('hidden');
+        updateSyncIndicator('hors ligne', 'Non connecté');
       }
     });
 
