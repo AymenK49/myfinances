@@ -351,7 +351,7 @@
       document.getElementById('solde').textContent = `Solde : ${formatTND(solde)} TND`;
     }
 
-    // Historique par jour
+    // Historique par jour (avec total)
     function afficherHistoriqueParJour(transactions) {
       const container = document.getElementById('dailyHistory');
       container.innerHTML = '';
@@ -359,25 +359,47 @@
       const sorted = transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
       const byDay = {};
 
+      // Grouper par jour
       sorted.forEach(t => {
         const day = t.date;
-        if (!byDay[day]) byDay[day] = [];
-        byDay[day].push(t);
+        if (!byDay[day]) byDay[day] = { depenses: [], revenus: [] };
+        if (t.type) {
+          byDay[day].depenses.push(t);
+        } else {
+          byDay[day].revenus.push(t);
+        }
       });
 
+      // Afficher chaque jour
       for (const day in byDay) {
+        const jour = byDay[day];
+        const totalDepenses = jour.depenses.reduce((a, b) => a + parseFloat(b.montant), 0);
+        const totalRevenus = jour.revenus.reduce((a, b) => a + parseFloat(b.montant), 0);
+        const solde = totalRevenus - totalDepenses;
+
         const div = document.createElement('div');
-        div.innerHTML = `<h4>${day}</h4>`;
-        const table = document.createElement('table');
-        table.innerHTML = '<thead><tr><th>Type</th><th>Montant</th><th>Date</th></tr></thead><tbody>';
-        byDay[day].forEach(t => {
-          const type = t.type || t.source;
-          const montant = formatTND(t.montant) + ' TND';
-          const classe = t.type ? 'total-depenses' : 'total-revenus';
-          table.innerHTML += `<tr><td>${type}</td><td class="${classe}">${montant}</td><td>${t.date}</td></tr>`;
-        });
-        table.innerHTML += '</tbody>';
-        div.appendChild(table);
+        div.innerHTML = `
+          <h4>${day}</h4>
+          <p><strong>Dépenses :</strong> ${formatTND(totalDepenses)} TND</p>
+          <p><strong>Revenus :</strong> ${formatTND(totalRevenus)} TND</p>
+          <p><strong>Solde :</strong> ${formatTND(solde)} TND</p>
+        `;
+
+        // Tableau des transactions
+        if (jour.depenses.length > 0 || jour.revenus.length > 0) {
+          const table = document.createElement('table');
+          table.innerHTML = '<thead><tr><th>Type</th><th>Montant</th></tr></thead><tbody>';
+          [...jour.depenses, ...jour.revenus].forEach(t => {
+            const type = t.type || t.source;
+            const montant = formatTND(t.montant) + ' TND';
+            const classe = t.type ? 'total-depenses' : 'total-revenus';
+            table.innerHTML += `<tr><td>${type}</td><td class="${classe}">${montant}</td></tr>`;
+          });
+          table.innerHTML += '</tbody>';
+          div.appendChild(table);
+        }
+
+        div.innerHTML += '<hr>';
         container.appendChild(div);
       }
     }
@@ -443,14 +465,14 @@
           datasets: [
             {
               label: 'Dépenses (TND)',
-               depenses,
+              data: depenses,
               backgroundColor: 'rgba(220, 53, 69, 0.7)',
               borderColor: 'rgba(220, 53, 69, 1)',
               borderWidth: 1
             },
             {
               label: 'Revenus (TND)',
-               revenus,
+              data: revenus,
               backgroundColor: 'rgba(40, 167, 69, 0.7)',
               borderColor: 'rgba(40, 167, 69, 1)',
               borderWidth: 1
