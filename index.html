@@ -167,73 +167,15 @@
     .hidden {
       display: none;
     }
-    /* Indicateur de synchronisation */
-    .sync-indicator {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      padding: 10px 15px;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      z-index: 1000;
-      display: flex;
-      align-items: center;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    }
-    .sync-connected {
-      background: #28a745;
-      color: white;
-    }
-    .sync-loading {
-      background: #007bff;
-      color: white;
-    }
-    .sync-error {
-      background: #dc3545;
-      color: white;
-    }
-    .sync-offline {
-      background: #6c757d;
-      color: white;
-    }
   </style>
 </head>
 <body>
 
-  <!-- Indicateur de synchronisation -->
-  <div id="syncIndicator" class="sync-indicator sync-loading">
-    <i class="fas fa-spinner fa-spin"></i>
-    <span class="ml-2">Initialisation...</span>
-  </div>
-
-  <!-- Écran de connexion -->
-  <div id="authScreen" class="container">
-    <div class="card">
-      <h1 style="text-align:center; color:#28a745;"><i class="fas fa-user-shield"></i> Connexion</h1>
-      <p style="text-align:center; margin:15px 0;">Accédez à votre gestion financière</p>
-
-      <div class="form-group">
-        <label for="email">Email</label>
-        <input type="email" id="email" placeholder="votre@email.com" required />
-      </div>
-      <div class="form-group">
-        <label for="password">Mot de passe</label>
-        <input type="password" id="password" required />
-      </div>
-      <button class="btn-primary" onclick="login()">Se connecter</button>
-
-      <!-- Message d'erreur -->
-      <div id="authError" style="color: #dc3545; text-align: center; margin-top: 10px; display: none;"></div>
-    </div>
-  </div>
-
-  <!-- Application -->
-  <div id="app" class="container hidden">
+  <div class="container">
 
     <header>
       <h1><i class="fas fa-wallet"></i> MyFinances (TND)</h1>
-      <p>Gestion synchronisée de vos dépenses et revenus</p>
+      <p>Gestion simple - Données stockées dans Firebase (sans auth)</p>
     </header>
 
     <!-- Ajouter une dépense -->
@@ -320,9 +262,7 @@
     </div>
 
     <footer>
-      <button onclick="deconnexion()" style="background:#dc3545; color:white; border:none; padding:10px; border-radius:6px; cursor:pointer;">
-        🔐 Déconnexion
-      </button>
+      💼 Accès direct à la base de données - À utiliser pour tests uniquement
     </footer>
   </div>
 
@@ -330,10 +270,9 @@
   <script type="module">
     // Import Firebase
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js';
-    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js';
     import { getDatabase, ref, onValue, set, push, remove } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js';
 
-    // 🔥 Ta configuration Firebase (à remplacer par la tienne)
+    // 🔥 Ta configuration Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyDnWAhDsJ8thCMTDngmiiu4zKS-Xc0CZxg",
       authDomain: "myfinaces-8b1b8.firebaseapp.com",
@@ -344,81 +283,12 @@
     };
 
     // Initialiser Firebase
-    let app, auth, database;
-    let firebaseInitialized = false;
-
-    try {
-      app = initializeApp(firebaseConfig);
-      auth = getAuth();
-      database = getDatabase();
-      firebaseInitialized = true;
-      console.log("Firebase initialisé avec succès");
-      updateSyncIndicator('connecté', 'Connexion Firebase réussie');
-    } catch (error) {
-      console.error('Erreur d’initialisation Firebase:', error);
-      updateSyncIndicator('erreur', 'Firebase non disponible');
-    }
-
-    // Fonction pour mettre à jour l'indicateur
-    function updateSyncIndicator(status, message = '') {
-      const indicator = document.getElementById('syncIndicator');
-      indicator.className = 'sync-indicator';
-      if (status === 'connecté') {
-        indicator.classList.add('sync-connected');
-        indicator.innerHTML = '<i class="fas fa-wifi"></i><span class="ml-2">Connecté</span>';
-      } else if (status === 'chargement' || status === 'connexion') {
-        indicator.classList.add('sync-loading');
-        indicator.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span class="ml-2">Chargement...</span>';
-      } else if (status === 'erreur') {
-        indicator.classList.add('sync-error');
-        indicator.innerHTML = '<i class="fas fa-exclamation-circle"></i><span class="ml-2">Erreur</span>';
-      } else if (status === 'hors ligne') {
-        indicator.classList.add('sync-offline');
-        indicator.innerHTML = '<i class="fas fa-wifi"></i><span class="ml-2">Hors ligne</span>';
-      }
-      if (message) {
-        indicator.innerHTML += `<span class="ml-2">• ${message}</span>`;
-      }
-    }
-
-    // Éléments DOM
-    const authScreen = document.getElementById('authScreen');
-    const appScreen = document.getElementById('app');
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase();
 
     // Données locales
     let depenses = [];
     let revenus = [];
-
-    // Fonction de connexion
-    window.login = function() {
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      const errorDiv = document.getElementById('authError');
-
-      errorDiv.style.display = 'none';
-      errorDiv.textContent = '';
-      updateSyncIndicator('connexion', 'Connexion en cours...');
-
-      signInWithEmailAndPassword(auth, email, password)
-        .catch((error) => {
-          let message = error.message;
-          if (error.code === 'auth/user-not-found') {
-            message = 'Utilisateur non trouvé.';
-          } else if (error.code === 'auth/wrong-password') {
-            message = 'Mot de passe incorrect.';
-          } else if (error.code === 'auth/invalid-email') {
-            message = 'Email invalide.';
-          }
-          errorDiv.textContent = message;
-          errorDiv.style.display = 'block';
-          updateSyncIndicator('erreur', 'Échec de connexion');
-        });
-    };
-
-    // Format TND
-    function formatTND(montant) {
-      return parseFloat(montant).toFixed(3).replace('.', ',');
-    }
 
     // Afficher/Masquer champ "Autre" pour les dépenses
     window.toggleAutreDepense = function() {
@@ -455,8 +325,7 @@
         return;
       }
 
-      const userId = auth.currentUser.uid;
-      const newRef = push(ref(database, 'users/' + userId + '/depenses'));
+      const newRef = push(ref(database, 'public/depenses'));
       set(newRef, {
         id: newRef.key,
         type: typeFinal,
@@ -483,8 +352,7 @@
         return;
       }
 
-      const userId = auth.currentUser.uid;
-      const newRef = push(ref(database, 'users/' + userId + '/revenus'));
+      const newRef = push(ref(database, 'public/revenus'));
       set(newRef, {
         id: newRef.key,
         source: sourceFinal,
@@ -498,198 +366,22 @@
       document.getElementById('autreRevenuDiv').classList.add('hidden');
     };
 
-    // Déconnexion
-    window.deconnexion = function() {
-      updateSyncIndicator('chargement', 'Déconnexion...');
-      signOut(auth).then(() => {
-        updateSyncIndicator('hors ligne', 'Déconnecté');
-      }).catch(() => {
-        updateSyncIndicator('erreur', 'Échec de déconnexion');
-      });
+    // Supprimer
+    window.supprimer = function(id, type) {
+      if (!confirm("Supprimer ?")) return;
+      remove(ref(database, `public/${type}/${id}`));
     };
 
-    // Écouteur d'authentification
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        updateSyncIndicator('connecté', 'Connecté en tant que ' + user.email);
-        const userId = user.uid;
-        const userRef = ref(database, 'users/' + userId);
-
-        onValue(userRef, (snapshot) => {
-          const data = snapshot.val() || { depenses: {}, revenus: {} };
-          depenses = Object.values(data.depenses || {});
-          revenus = Object.values(data.revenus || {});
-          afficherHistoriqueParJour([...depenses, ...revenus]);
-          afficherHistoriqueParMois([...depenses, ...revenus]);
-          afficherGraphique([...depenses, ...revenus]);
-          calculerSolde(depenses, revenus);
-        });
-
-        authScreen.classList.add('hidden');
-        appScreen.classList.remove('hidden');
-      } else {
-        authScreen.classList.remove('hidden');
-        appScreen.classList.add('hidden');
-        updateSyncIndicator('hors ligne', 'Non connecté');
-      }
+    // Écouteur de données
+    onValue(ref(database, 'public/depenses'), (snapshot) => {
+      const data = snapshot.val() || {};
+      depenses = Object.values(data);
+      afficherHistoriqueParJour([...depenses, ...revenus]);
+      afficherHistoriqueParMois([...depenses, ...revenus]);
+      afficherGraphique([...depenses, ...revenus]);
+      calculerSolde();
     });
 
-    // Historique par jour (avec total quotidien)
-    function afficherHistoriqueParJour(transactions) {
-      const container = document.getElementById('dailyHistory');
-      container.innerHTML = '';
-
-      const sorted = transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
-      const byDay = {};
-
-      sorted.forEach(t => {
-        const day = t.date;
-        if (!byDay[day]) byDay[day] = { depenses: [], revenus: [] };
-        if (t.type) {
-          byDay[day].depenses.push(t);
-        } else {
-          byDay[day].revenus.push(t);
-        }
-      });
-
-      for (const day in byDay) {
-        const data = byDay[day];
-        const totalDepenses = data.depenses.reduce((a, b) => a + parseFloat(b.montant), 0);
-        const totalRevenus = data.revenus.reduce((a, b) => a + parseFloat(b.montant), 0);
-        const soldeJour = totalRevenus - totalDepenses;
-
-        const div = document.createElement('div');
-        div.innerHTML = `<h4>${day}</h4>`;
-
-        if (data.depenses.length > 0) {
-          const tableD = document.createElement('table');
-          tableD.innerHTML = '<thead><tr><th>Dépense</th><th>Montant</th></tr></thead><tbody>';
-          data.depenses.forEach(d => {
-            tableD.innerHTML += `<tr><td>${d.type}</td><td class="total-depenses">${formatTND(d.montant)} TND</td></tr>`;
-          });
-          tableD.innerHTML += '</tbody>';
-          div.appendChild(tableD);
-        }
-
-        if (data.revenus.length > 0) {
-          const tableR = document.createElement('table');
-          tableR.innerHTML = '<thead><tr><th>Revenu</th><th>Montant</th></tr></thead><tbody>';
-          data.revenus.forEach(r => {
-            tableR.innerHTML += `<tr><td>${r.source}</td><td class="total-revenus">${formatTND(r.montant)} TND</td></tr>`;
-          });
-          tableR.innerHTML += '</tbody>';
-          div.appendChild(tableR);
-        }
-
-        div.innerHTML += `
-          <div class="daily-summary">
-            <p><strong>Total dépenses :</strong> ${formatTND(totalDepenses)} TND</p>
-            <p><strong>Total revenus :</strong> ${formatTND(totalRevenus)} TND</p>
-            <p><strong>Solde du jour :</strong> ${formatTND(soldeJour)} TND</p>
-          </div>
-        `;
-
-        container.appendChild(div);
-      }
-    }
-
-    // Historique par mois
-    function afficherHistoriqueParMois(transactions) {
-      const container = document.getElementById('monthlyHistory');
-      container.innerHTML = '';
-
-      const byMonth = {};
-      transactions.forEach(t => {
-        const mois = t.date.substring(0, 7);
-        if (!byMonth[mois]) byMonth[mois] = { depenses: 0, revenus: 0 };
-        if (t.type) {
-          byMonth[mois].depenses += parseFloat(t.montant);
-        } else {
-          byMonth[mois].revenus += parseFloat(t.montant);
-        }
-      });
-
-      for (const mois in byMonth) {
-        const d = byMonth[mois].depenses.toFixed(3);
-        const r = byMonth[mois].revenus.toFixed(3);
-        const solde = (r - d).toFixed(3);
-        const div = document.createElement('div');
-        div.innerHTML = `
-          <h4>${mois}</h4>
-          <p><strong>Dépenses :</strong> ${formatTND(d)} TND</p>
-          <p><strong>Revenus :</strong> ${formatTND(r)} TND</p>
-          <p><strong>Solde :</strong> ${formatTND(solde)} TND</p>
-          <hr>
-        `;
-        container.appendChild(div);
-      }
-    }
-
-    // Graphique mensuel
-    let chart = null;
-    function afficherGraphique(transactions) {
-      const ctx = document.getElementById('monthlyChart').getContext('2d');
-
-      const byMonth = {};
-      transactions.forEach(t => {
-        const mois = t.date.substring(0, 7);
-        if (!byMonth[mois]) byMonth[mois] = { depenses: 0, revenus: 0 };
-        if (t.type) {
-          byMonth[mois].depenses += parseFloat(t.montant);
-        } else {
-          byMonth[mois].revenus += parseFloat(t.montant);
-        }
-      });
-
-      const mois = Object.keys(byMonth).sort();
-      const depenses = mois.map(m => byMonth[m].depenses);
-      const revenus = mois.map(m => byMonth[m].revenus);
-
-      if (chart) chart.destroy();
-
-      chart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: mois,
-          datasets: [
-            {
-              label: 'Dépenses (TND)',
-              data: depenses,
-              backgroundColor: 'rgba(220, 53, 69, 0.7)',
-              borderColor: 'rgba(220, 53, 69, 1)',
-              borderWidth: 1
-            },
-            {
-              label: 'Revenus (TND)',
-              data: revenus,
-              backgroundColor: 'rgba(40, 167, 69, 0.7)',
-              borderColor: 'rgba(40, 167, 69, 1)',
-              borderWidth: 1
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: {
-              beginAtZero: true
-            }
-          }
-        }
-      });
-    }
-
-    // Calculer solde
-    function calculerSolde(depenses, revenus) {
-      const totalD = depenses.reduce((a, b) => a + parseFloat(b.montant), 0);
-      const totalR = revenus.reduce((a, b) => a + parseFloat(b.montant), 0);
-      const solde = totalR - totalD;
-      document.getElementById('solde').textContent = `Solde : ${formatTND(solde)} TND`;
-    }
-
-    // Pré-remplir les dates
-    document.getElementById('dateDepense').valueAsDate = new Date();
-    document.getElementById('dateRevenu').valueAsDate = new Date();
-  </script>
-</body>
-</html>
+    onValue(ref(database, 'public/revenus'), (snapshot) => {
+      const data = snapshot.val() || {};
+      revenus = Object.values
