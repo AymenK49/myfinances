@@ -1,512 +1,1245 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>MyFinances - TND</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    body {
-      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #f8f9fa;
-      color: #212529;
-      line-height: 1.6;
-    }
-    .container {
-      max-width: 100%;
-      margin: 0 auto;
-      padding: 15px;
-    }
-    @media (min-width: 768px) {
-      .container {
-        max-width: 1000px;
-        padding: 30px;
-      }
-    }
-
-    header {
-      text-align: center;
-      padding: 20px;
-      background: #28a745;
-      color: white;
-      border-radius: 12px;
-      margin-bottom: 20px;
-    }
-    header h1 {
-      font-size: 1.4rem;
-    }
-
-    .card {
-      background: white;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 16px;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.08);
-    }
-
-    .form-group {
-      margin-bottom: 16px;
-    }
-    label {
-      display: block;
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: #495057;
-      margin-bottom: 8px;
-    }
-    input, select {
-      width: 100%;
-      padding: 12px;
-      font-size: 1rem;
-      border: 1px solid #ced4da;
-      border-radius: 8px;
-      background-color: #f8f9fa;
-    }
-    input:focus, select:focus {
-      outline: none;
-      border-color: #28a745;
-      background-color: white;
-    }
-
-    button {
-      display: block;
-      width: 100%;
-      padding: 14px;
-      font-size: 1rem;
-      font-weight: 600;
-      text-align: center;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-    .btn-primary {
-      background-color: #28a745;
-      color: white;
-    }
-    .btn-primary:hover {
-      background-color: #218838;
-    }
-    .btn-danger {
-      background-color: #dc3545;
-      color: white;
-      padding: 6px 10px;
-      font-size: 0.9rem;
-      width: auto;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-    th {
-      text-align: left;
-      font-weight: 600;
-      color: #495057;
-      font-size: 0.9rem;
-      padding: 10px 8px;
-      background-color: #f1f3f5;
-    }
-    td {
-      padding: 12px 8px;
-      font-size: 0.95rem;
-      border-bottom: 1px solid #e9ecef;
-    }
-
-    .total-box {
-      padding: 12px;
-      border-radius: 10px;
-      margin-top: 10px;
-      text-align: center;
-      font-weight: bold;
-    }
-    .total-depenses {
-      background: #f8d7da;
-      color: #721c24;
-      border: 1px solid #f5c6cb;
-    }
-    .total-revenus {
-      background: #d4edda;
-      color: #155724;
-      border: 1px solid #c3e6cb;
-    }
-    .solde {
-      background: #fff3cd;
-      color: #856404;
-      border: 1px solid #ffeaa7;
-      font-size: 1.3rem;
-      padding: 14px;
-      margin-top: 16px;
-    }
-
-    .action-cell {
-      text-align: right;
-    }
-    footer {
-      text-align: center;
-      font-size: 0.8rem;
-      color: #6c757d;
-      margin-top: 30px;
-      padding: 10px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion de Budget Personnel</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap');
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f8fafc;
+            margin: 0;
+            padding: 0;
+        }
+        .sidebar {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            z-index: 50;
+        }
+        .card {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .nav-item.active {
+            background-color: #eff6ff;
+            border-right: 3px solid #3b82f6;
+            color: #3b82f6;
+        }
+        .reminder-card {
+            border-left-width: 4px;
+        }
+        .mobile-menu-button {
+            display: none;
+        }
+        .sidebar-mobile {
+            display: none;
+        }
+        .sync-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            z-index: 1000;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+            .sidebar-mobile {
+                display: block;
+            }
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+            }
+            .mobile-menu-button {
+                display: block;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            .history-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (min-width: 769px) {
+            .main-content {
+                margin-left: 16rem;
+            }
+        }
+    </style>
 </head>
 <body>
+    <div id="root"></div>
 
-  <div class="container">
+    <script type="text/babel">
+        // Configuration Firebase - Nouveau projet
+        const firebaseConfig = {
+          apiKey: "AIzaSyAGD3U5XUqQuhxP2JxxltnNnCPLk3CIVDw",
+          authDomain: "gestion-financiere-tnd.firebaseapp.com",
+          databaseURL: "https://gestion-financiere-tnd-default-rtdb.europe-west1.firebasedatabase.app",
+          projectId: "gestion-financiere-tnd",
+          storageBucket: "gestion-financiere-tnd.firebasestorage.app",
+          messagingSenderId: "891261280632",
+          appId: "1:891261280632:web:0a4c9b408e7d078745688d",
+          measurementId: "G-WDFVCES5D0"
+        };
 
-    <header>
-      <h1><i class="fas fa-wallet"></i> MyFinances (TND)</h1>
-      <p>Gestion simple de vos dépenses et revenus</p>
-    </header>
-
-    <!-- Ajouter une dépense -->
-    <div class="card">
-      <h2 style="margin-bottom:15px;">➕ Ajouter une dépense</h2>
-      <div class="form-group">
-        <label for="type">Type</label>
-        <select id="type" onchange="toggleAutreDepense()">
-          <option value="Transport">🚗 Transport</option>
-          <option value="Repas">🍽️ Repas</option>
-          <option value="Logement">🏠 Logement</option>
-          <option value="Famille">👨‍👩‍👧‍👦 Famille</option>
-          <option value="Divertissement">☕ Divertissement</option>
-          <option value="Matériel">💻 Matériel</option>
-          <option value="Autre">📦 Autre</option>
-        </select>
-      </div>
-      <div class="form-group hidden" id="autreDepenseDiv">
-        <label for="autreDepense">Précisez</label>
-        <input type="text" id="autreDepense" placeholder="Ex: Cadeau, Réparation..." />
-      </div>
-      <div class="form-group">
-        <label for="montant">Montant (TND)</label>
-        <input type="number" id="montant" step="0.001" placeholder="150.000" />
-      </div>
-      <div class="form-group">
-        <label for="dateDepense">Date</label>
-        <input type="date" id="dateDepense" />
-      </div>
-      <button class="btn-primary" onclick="ajouterDepense()">Enregistrer</button>
-    </div>
-
-    <!-- Ajouter un revenu -->
-    <div class="card">
-      <h2 style="margin-bottom:15px;">➕ Ajouter un revenu</h2>
-      <div class="form-group">
-        <label for="source">Source</label>
-        <select id="source" onchange="toggleAutreRevenu()">
-          <option value="Salaire">💼 Salaire</option>
-          <option value="Freelance">🌐 Freelance</option>
-          <option value="Bonus">🎁 Bonus</option>
-          <option value="Vacation">🏖️ Vacation</option>
-          <option value="Autre">📦 Autre</option>
-        </select>
-      </div>
-      <div class="form-group hidden" id="autreRevenuDiv">
-        <label for="autreRevenu">Précisez</label>
-        <input type="text" id="autreRevenu" placeholder="Ex: Vente, Remboursement..." />
-      </div>
-      <div class="form-group">
-        <label for="montantRevenu">Montant (TND)</label>
-        <input type="number" id="montantRevenu" step="0.001" placeholder="1000.000" />
-      </div>
-      <div class="form-group">
-        <label for="dateRevenu">Date</label>
-        <input type="date" id="dateRevenu" />
-      </div>
-      <button class="btn-primary" onclick="ajouterRevenu()">Enregistrer</button>
-    </div>
-
-    <!-- Graphique -->
-    <div class="card">
-      <h2>📊 Évolution mensuelle</h2>
-      <canvas id="monthlyChart" height="100"></canvas>
-    </div>
-
-    <!-- Historique par mois -->
-    <div class="card">
-      <h2>📅 Historique par mois</h2>
-      <div id="monthlyHistory"></div>
-    </div>
-
-    <!-- Historique par jour -->
-    <div class="card">
-      <h2>🗓️ Historique par jour</h2>
-      <div id="dailyHistory"></div>
-    </div>
-
-    <!-- Solde -->
-    <div class="card">
-      <div class="total-box solde" id="solde">
-        Solde : 0,000 TND
-      </div>
-    </div>
-
-    <footer>
-      💼 Application 100% locale - Fonctionne hors ligne
-    </footer>
-
-  </div>
-
-  <script>
-    // Données locales
-    let depenses = JSON.parse(localStorage.getItem('myfinances-depenses')) || [];
-    let revenus = JSON.parse(localStorage.getItem('myfinances-revenus')) || [];
-
-    // Format TND
-    function formatTND(montant) {
-      return parseFloat(montant).toFixed(3).replace('.', ',');
-    }
-
-    // Afficher/Masquer champ "Autre" pour les dépenses
-    window.toggleAutreDepense = function() {
-      const select = document.getElementById('type');
-      const div = document.getElementById('autreDepenseDiv');
-      if (select.value === 'Autre') {
-        div.classList.remove('hidden');
-      } else {
-        div.classList.add('hidden');
-      }
-    };
-
-    // Afficher/Masquer champ "Autre" pour les revenus
-    window.toggleAutreRevenu = function() {
-      const select = document.getElementById('source');
-      const div = document.getElementById('autreRevenuDiv');
-      if (select.value === 'Autre') {
-        div.classList.remove('hidden');
-      } else {
-        div.classList.add('hidden');
-      }
-    };
-
-    // Ajouter dépense
-    window.ajouterDepense = function() {
-      const type = document.getElementById('type').value;
-      const autre = document.getElementById('autreDepense').value;
-      const typeFinal = type === 'Autre' ? (autre || 'Autre') : type;
-      const montant = document.getElementById('montant').value;
-      const date = document.getElementById('dateDepense').value;
-
-      if (!typeFinal || !montant || !date) {
-        alert("Veuillez remplir tous les champs.");
-        return;
-      }
-
-      depenses.push({ type: typeFinal, montant: parseFloat(montant).toFixed(3), date });
-      localStorage.setItem('myfinances-depenses', JSON.stringify(depenses));
-      afficherHistoriqueParJour([...depenses, ...revenus]);
-      afficherHistoriqueParMois([...depenses, ...revenus]);
-      afficherGraphique([...depenses, ...revenus]);
-      calculerSolde();
-
-      // Réinitialiser
-      document.getElementById('montant').value = '';
-      document.getElementById('dateDepense').valueAsDate = new Date();
-      document.getElementById('autreDepense').value = '';
-      document.getElementById('autreDepenseDiv').classList.add('hidden');
-    };
-
-    // Ajouter revenu
-    window.ajouterRevenu = function() {
-      const source = document.getElementById('source').value;
-      const autre = document.getElementById('autreRevenu').value;
-      const sourceFinal = source === 'Autre' ? (autre || 'Autre') : source;
-      const montant = document.getElementById('montantRevenu').value;
-      const date = document.getElementById('dateRevenu').value;
-
-      if (!sourceFinal || !montant || !date) {
-        alert("Veuillez remplir tous les champs.");
-        return;
-      }
-
-      revenus.push({ source: sourceFinal, montant: parseFloat(montant).toFixed(3), date });
-      localStorage.setItem('myfinances-revenus', JSON.stringify(revenus));
-      afficherHistoriqueParJour([...depenses, ...revenus]);
-      afficherHistoriqueParMois([...depenses, ...revenus]);
-      afficherGraphique([...depenses, ...revenus]);
-      calculerSolde();
-
-      // Réinitialiser
-      document.getElementById('montantRevenu').value = '';
-      document.getElementById('dateRevenu').valueAsDate = new Date();
-      document.getElementById('autreRevenu').value = '';
-      document.getElementById('autreRevenuDiv').classList.add('hidden');
-    };
-
-    // Calculer solde
-    function calculerSolde() {
-      const totalD = depenses.reduce((a, b) => a + parseFloat(b.montant), 0);
-      const totalR = revenus.reduce((a, b) => a + parseFloat(b.montant), 0);
-      const solde = totalR - totalD;
-      document.getElementById('solde').textContent = `Solde : ${formatTND(solde)} TND`;
-    }
-
-    // Historique par jour (avec total)
-    function afficherHistoriqueParJour(transactions) {
-      const container = document.getElementById('dailyHistory');
-      container.innerHTML = '';
-
-      const sorted = transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
-      const byDay = {};
-
-      // Grouper par jour
-      sorted.forEach(t => {
-        const day = t.date;
-        if (!byDay[day]) byDay[day] = { depenses: [], revenus: [] };
-        if (t.type) {
-          byDay[day].depenses.push(t);
-        } else {
-          byDay[day].revenus.push(t);
-        }
-      });
-
-      // Afficher chaque jour
-      for (const day in byDay) {
-        const jour = byDay[day];
-        const totalDepenses = jour.depenses.reduce((a, b) => a + parseFloat(b.montant), 0);
-        const totalRevenus = jour.revenus.reduce((a, b) => a + parseFloat(b.montant), 0);
-        const solde = totalRevenus - totalDepenses;
-
-        const div = document.createElement('div');
-        div.innerHTML = `
-          <h4>${day}</h4>
-          <p><strong>Dépenses :</strong> ${formatTND(totalDepenses)} TND</p>
-          <p><strong>Revenus :</strong> ${formatTND(totalRevenus)} TND</p>
-          <p><strong>Solde :</strong> ${formatTND(solde)} TND</p>
-        `;
-
-        // Tableau des transactions
-        if (jour.depenses.length > 0 || jour.revenus.length > 0) {
-          const table = document.createElement('table');
-          table.innerHTML = '<thead><tr><th>Type</th><th>Montant</th></tr></thead><tbody>';
-          [...jour.depenses, ...jour.revenus].forEach(t => {
-            const type = t.type || t.source;
-            const montant = formatTND(t.montant) + ' TND';
-            const classe = t.type ? 'total-depenses' : 'total-revenus';
-            table.innerHTML += `<tr><td>${type}</td><td class="${classe}">${montant}</td></tr>`;
-          });
-          table.innerHTML += '</tbody>';
-          div.appendChild(table);
-        }
-
-        div.innerHTML += '<hr>';
-        container.appendChild(div);
-      }
-    }
-
-    // Historique par mois
-    function afficherHistoriqueParMois(transactions) {
-      const container = document.getElementById('monthlyHistory');
-      container.innerHTML = '';
-
-      const byMonth = {};
-      transactions.forEach(t => {
-        const mois = t.date.substring(0, 7);
-        if (!byMonth[mois]) byMonth[mois] = { depenses: 0, revenus: 0 };
-        if (t.type) {
-          byMonth[mois].depenses += parseFloat(t.montant);
-        } else {
-          byMonth[mois].revenus += parseFloat(t.montant);
-        }
-      });
-
-      for (const mois in byMonth) {
-        const d = byMonth[mois].depenses.toFixed(3);
-        const r = byMonth[mois].revenus.toFixed(3);
-        const solde = (r - d).toFixed(3);
-        const div = document.createElement('div');
-        div.innerHTML = `
-          <h4>${mois}</h4>
-          <p><strong>Dépenses :</strong> ${formatTND(d)} TND</p>
-          <p><strong>Revenus :</strong> ${formatTND(r)} TND</p>
-          <p><strong>Solde :</strong> ${formatTND(solde)} TND</p>
-          <hr>
-        `;
-        container.appendChild(div);
-      }
-    }
-
-    // Graphique mensuel
-    let chart = null;
-    function afficherGraphique(transactions) {
-      const ctx = document.getElementById('monthlyChart').getContext('2d');
-
-      const byMonth = {};
-      transactions.forEach(t => {
-        const mois = t.date.substring(0, 7);
-        if (!byMonth[mois]) byMonth[mois] = { depenses: 0, revenus: 0 };
-        if (t.type) {
-          byMonth[mois].depenses += parseFloat(t.montant);
-        } else {
-          byMonth[mois].revenus += parseFloat(t.montant);
-        }
-      });
-
-      const mois = Object.keys(byMonth).sort();
-      const depenses = mois.map(m => byMonth[m].depenses);
-      const revenus = mois.map(m => byMonth[m].revenus);
-
-      if (chart) chart.destroy();
-
-      chart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: mois,
-          datasets: [
-            {
-              label: 'Dépenses (TND)',
-              data: depenses,
-              backgroundColor: 'rgba(220, 53, 69, 0.7)',
-              borderColor: 'rgba(220, 53, 69, 1)',
-              borderWidth: 1
-            },
-            {
-              label: 'Revenus (TND)',
-              data: revenus,
-              backgroundColor: 'rgba(40, 167, 69, 0.7)',
-              borderColor: 'rgba(40, 167, 69, 1)',
-              borderWidth: 1
+        // Initialiser Firebase
+        let database = null;
+        let auth = null;
+        let firebaseInitialized = false;
+        
+        try {
+            if (typeof firebase !== 'undefined') {
+                const app = firebase.initializeApp(firebaseConfig);
+                database = firebase.database();
+                auth = firebase.auth();
+                firebaseInitialized = true;
+                console.log("Firebase initialisé avec succès");
+            } else {
+                console.error("Firebase non disponible");
             }
-          ]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: {
-              beginAtZero: true
-            }
-          }
+        } catch (error) {
+            console.error('Firebase initialization error:', error);
         }
-      });
-    }
 
-    // Pré-remplir les dates
-    document.getElementById('dateDepense').valueAsDate = new Date();
-    document.getElementById('dateRevenu').valueAsDate = new Date();
+        const { useState, useEffect } = React;
+        const { motion, AnimatePresence } = window.FramerMotion || { motion: 'div', AnimatePresence: ({children}) => children };
 
-    // Charger les données au démarrage
-    window.onload = function() {
-      afficherHistoriqueParJour([...depenses, ...revenus]);
-      afficherHistoriqueParMois([...depenses, ...revenus]);
-      afficherGraphique([...depenses, ...revenus]);
-      calculerSolde();
-    };
-  </script>
+        const App = () => {
+            const [currentView, setCurrentView] = useState('dashboard');
+            const [transactions, setTransactions] = useState([]);
+            const [soldeInitial, setSoldeInitial] = useState(0);
+            const [isOnline, setIsOnline] = useState(firebaseInitialized);
+            const [syncStatus, setSyncStatus] = useState(firebaseInitialized ? 'connecté' : 'hors ligne');
+            const [syncMessage, setSyncMessage] = useState('');
+            const [user, setUser] = useState(null);
+            const [loading, setLoading] = useState(true);
+            
+            // États pour l'authentification
+            const [authMode, setAuthMode] = useState('login'); // 'login' ou 'register'
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+            const [confirmPassword, setConfirmPassword] = useState('');
+            const [authError, setAuthError] = useState('');
 
-  <style>
-    .hidden {
-      display: none;
-    }
-  </style>
+            const [formData, setFormData] = useState({
+                type: 'depense',
+                categorie: 'alimentation',
+                date: '',
+                montant: '',
+                description: '',
+                methodePaiement: 'especes'
+            });
+
+            const [searchTerm, setSearchTerm] = useState('');
+            const [filterCategorie, setFilterCategorie] = useState('all');
+            const [filterPeriode, setFilterPeriode] = useState('all'); // 'all', 'semaine', 'mois', 'annee'
+            const [sidebarOpen, setSidebarOpen] = useState(false);
+
+            // Catégories de dépenses
+            const categoriesDepenses = [
+                { id: 'alimentation', label: 'Alimentation', icon: 'fa-utensils', color: 'bg-red-500' },
+                { id: 'logement', label: 'Logement', icon: 'fa-home', color: 'bg-blue-500' },
+                { id: 'transport', label: 'Transport', icon: 'fa-car', color: 'bg-green-500' },
+                { id: 'sante', label: 'Santé', icon: 'fa-heartbeat', color: 'bg-pink-500' },
+                { id: 'loisirs', label: 'Loisirs', icon: 'fa-gamepad', color: 'bg-yellow-500' },
+                { id: 'education', label: 'Éducation', icon: 'fa-graduation-cap', color: 'bg-purple-500' },
+                { id: 'vetements', label: 'Vêtements', icon: 'fa-tshirt', color: 'bg-indigo-500' },
+                { id: 'autres', label: 'Autres', icon: 'fa-ellipsis-h', color: 'bg-gray-500' }
+            ];
+
+            // Catégories de revenus
+            const categoriesRevenus = [
+                { id: 'salaire', label: 'Salaire', icon: 'fa-wallet', color: 'bg-green-500' },
+                { id: 'investissement', label: 'Investissement', icon: 'fa-chart-line', color: 'bg-blue-500' },
+                { id: 'cadeau', label: 'Cadeau', icon: 'fa-gift', color: 'bg-yellow-500' },
+                { id: 'autres-revenus', label: 'Autres revenus', icon: 'fa-coins', color: 'bg-purple-500' }
+            ];
+
+            // Gérer l'état d'authentification
+            useEffect(() => {
+                if (auth) {
+                    const unsubscribe = auth.onAuthStateChanged((user) => {
+                        if (user) {
+                            console.log("Utilisateur connecté:", user);
+                            setUser(user);
+                            setLoading(false);
+                        } else {
+                            console.log("Utilisateur déconnecté");
+                            setUser(null);
+                            setLoading(false);
+                        }
+                    });
+                    return () => unsubscribe();
+                }
+            }, []);
+
+            // Charger les données lorsque l'utilisateur est connecté
+            useEffect(() => {
+                if (user && database) {
+                    const loadData = async () => {
+                        try {
+                            console.log("Chargement des données depuis Firebase pour l'utilisateur:", user.uid);
+                            const snapshot = await database.ref(`users/${user.uid}/budgetData`).once('value');
+                            const data = snapshot.val();
+                            console.log("Données chargées:", data);
+                            
+                            if (data) {
+                                if (data.soldeInitial !== undefined) {
+                                    setSoldeInitial(data.soldeInitial);
+                                }
+                                if (data.transactions) {
+                                    setTransactions(data.transactions);
+                                }
+                            }
+                            setIsOnline(true);
+                            setSyncStatus('synchronisé');
+                            setSyncMessage('Données chargées');
+                        } catch (error) {
+                            console.error('Erreur de chargement:', error);
+                            setSyncStatus('erreur');
+                            setSyncMessage('Erreur de chargement');
+                        }
+                    };
+                    
+                    loadData();
+                    
+                    // Écouter les changements en temps réel
+                    const unsubscribe = database.ref(`users/${user.uid}/budgetData`).on('value', (snapshot) => {
+                        const data = snapshot.val();
+                        console.log("Données mises à jour:", data);
+                        if (data) {
+                            if (data.soldeInitial !== undefined) {
+                                setSoldeInitial(data.soldeInitial);
+                            }
+                            if (data.transactions) {
+                                setTransactions(data.transactions);
+                            }
+                        }
+                        setSyncStatus('synchronisé');
+                    }, (error) => {
+                        console.error("Erreur d'écoute:", error);
+                    });
+                    
+                    return () => unsubscribe();
+                }
+            }, [user]);
+
+            // Fonction de connexion
+            const handleLogin = async (e) => {
+                e.preventDefault();
+                if (auth) {
+                    try {
+                        setSyncStatus('connexion...');
+                        setSyncMessage('Connexion en cours');
+                        setAuthError('');
+                        await auth.signInWithEmailAndPassword(email, password);
+                        setSyncMessage('Connexion réussie');
+                    } catch (error) {
+                        console.error('Erreur de connexion:', error);
+                        setAuthError(error.message);
+                        setSyncStatus('erreur');
+                        setSyncMessage('Erreur de connexion');
+                    }
+                }
+            };
+
+            // Fonction d'inscription
+            const handleRegister = async (e) => {
+                e.preventDefault();
+                if (password !== confirmPassword) {
+                    setAuthError('Les mots de passe ne correspondent pas');
+                    return;
+                }
+                if (auth) {
+                    try {
+                        setSyncStatus('inscription...');
+                        setSyncMessage('Inscription en cours');
+                        setAuthError('');
+                        await auth.createUserWithEmailAndPassword(email, password);
+                        setSyncMessage('Inscription réussie');
+                    } catch (error) {
+                        console.error('Erreur d\'inscription:', error);
+                        setAuthError(error.message);
+                        setSyncStatus('erreur');
+                        setSyncMessage('Erreur d\'inscription');
+                    }
+                }
+            };
+
+            // Fonction de déconnexion
+            const signOut = async () => {
+                if (auth) {
+                    try {
+                        await auth.signOut();
+                        setTransactions([]);
+                        setSoldeInitial(0);
+                        setSyncMessage('Déconnexion réussie');
+                    } catch (error) {
+                        console.error('Erreur de déconnexion:', error);
+                    }
+                }
+            };
+
+            // Fonction de sauvegarde manuelle
+            const saveToCloud = async () => {
+                if (database && user) {
+                    try {
+                        setSyncStatus('sauvegarde...');
+                        setSyncMessage('Sauvegarde en cours');
+                        
+                        await database.ref(`users/${user.uid}/budgetData`).set({
+                            soldeInitial: soldeInitial,
+                            transactions: transactions
+                        });
+                        
+                        setSyncStatus('synchronisé');
+                        setSyncMessage('Données sauvegardées');
+                        setTimeout(() => setSyncMessage(''), 3000);
+                        
+                        console.log("Données sauvegardées avec succès");
+                    } catch (error) {
+                        console.error('Erreur de sauvegarde:', error);
+                        setSyncStatus('erreur');
+                        setSyncMessage('Erreur de sauvegarde');
+                    }
+                } else {
+                    setSyncStatus('hors ligne');
+                    setSyncMessage('Non connecté');
+                }
+            };
+
+            // Calculs pour le tableau de bord
+            const totalDepenses = transactions
+                .filter(t => t.type === 'depense')
+                .reduce((sum, transaction) => sum + parseFloat(transaction.montant), 0);
+            
+            const totalRevenus = transactions
+                .filter(t => t.type === 'revenu')
+                .reduce((sum, transaction) => sum + parseFloat(transaction.montant), 0);
+            
+            const soldeActuel = soldeInitial + totalRevenus - totalDepenses;
+            
+            const depensesParCategorie = {};
+            transactions
+                .filter(t => t.type === 'depense')
+                .forEach(transaction => {
+                    const cat = transaction.categorie;
+                    depensesParCategorie[cat] = (depensesParCategorie[cat] || 0) + parseFloat(transaction.montant);
+                });
+
+            // Filtrer les transactions par période
+            const filterTransactionsByPeriod = (transactions, period) => {
+                if (period === 'all') return transactions;
+                
+                const now = new Date();
+                const filtered = transactions.filter(transaction => {
+                    const transactionDate = new Date(transaction.date);
+                    
+                    switch(period) {
+                        case 'semaine':
+                            const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                            return transactionDate >= oneWeekAgo;
+                        case 'mois':
+                            const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+                            return transactionDate >= oneMonthAgo;
+                        case 'annee':
+                            const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+                            return transactionDate >= oneYearAgo;
+                        default:
+                            return true;
+                    }
+                });
+                
+                return filtered;
+            };
+
+            const transactionsFiltrees = filterTransactionsByPeriod(
+                transactions.filter(transaction => {
+                    const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                         transaction.categorie.toLowerCase().includes(searchTerm.toLowerCase());
+                    const matchesFilter = filterCategorie === 'all' || transaction.categorie === filterCategorie;
+                    return matchesSearch && matchesFilter;
+                }),
+                filterPeriode
+            );
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                
+                const newTransaction = {
+                    id: Date.now(),
+                    ...formData,
+                    montant: parseFloat(formData.montant),
+                    date: formData.date || new Date().toISOString().split('T')[0]
+                };
+                setTransactions([...transactions, newTransaction]);
+                setFormData({
+                    type: 'depense',
+                    categorie: 'alimentation',
+                    date: '',
+                    montant: '',
+                    description: '',
+                    methodePaiement: 'especes'
+                });
+                setCurrentView('dashboard');
+                setSidebarOpen(false);
+            };
+
+            const getCategoryInfo = (categorie) => {
+                const depenseCat = categoriesDepenses.find(cat => cat.id === categorie);
+                const revenuCat = categoriesRevenus.find(cat => cat.id === categorie);
+                return depenseCat || revenuCat || { label: categorie, icon: 'fa-question', color: 'bg-gray-500' };
+            };
+
+            const getCategoryColor = (categorie) => {
+                const catInfo = getCategoryInfo(categorie);
+                return catInfo.color;
+            };
+
+            const getCategoryIcon = (categorie) => {
+                const catInfo = getCategoryInfo(categorie);
+                return catInfo.icon;
+            };
+
+            const getCategoryLabel = (categorie) => {
+                const catInfo = getCategoryInfo(categorie);
+                return catInfo.label;
+            };
+
+            // Fonction pour formater les montants en TND
+            const formatTND = (amount) => {
+                return new Intl.NumberFormat('fr-TN', {
+                    style: 'currency',
+                    currency: 'TND',
+                    minimumFractionDigits: 3,
+                    maximumFractionDigits: 3
+                }).format(amount);
+            };
+
+            // Fonction pour réinitialiser toutes les données
+            const resetData = () => {
+                if (confirm('Êtes-vous sûr de vouloir réinitialiser toutes les données ?')) {
+                    setTransactions([]);
+                    setSoldeInitial(0);
+                    if (database && user) {
+                        database.ref(`users/${user.uid}/budgetData`).remove();
+                    }
+                }
+            };
+
+            const menuItems = [
+                { id: 'dashboard', label: 'Tableau de bord', icon: 'fa-chart-line' },
+                { id: 'ajout', label: 'Ajouter transaction', icon: 'fa-plus' },
+                { id: 'historique', label: 'Historique', icon: 'fa-history' }
+            ];
+
+            // Couleurs de statut de synchronisation
+            const getStatusColor = () => {
+                switch(syncStatus) {
+                    case 'connecté':
+                    case 'synchronisé':
+                        return 'bg-green-500 text-white';
+                    case 'hors ligne':
+                        return 'bg-gray-500 text-white';
+                    case 'erreur':
+                        return 'bg-red-500 text-white';
+                    case 'sauvegarde...':
+                    case 'connexion...':
+                    case 'inscription...':
+                        return 'bg-blue-500 text-white';
+                    default:
+                        return 'bg-yellow-500 text-white';
+                }
+            };
+
+            // Écran de chargement
+            if (loading) {
+                return (
+                    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                        <div className="text-center">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+                            <p className="mt-4 text-gray-600">Chargement...</p>
+                        </div>
+                    </div>
+                );
+            }
+
+            // Écran d'authentification
+            if (!user) {
+                return (
+                    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-lg card p-8 max-w-md w-full">
+                            <div className="text-center mb-8">
+                                <i className="fas fa-wallet text-blue-600 text-4xl mb-4"></i>
+                                <h1 className="text-2xl font-bold text-gray-800">Gestion de Budget Personnel</h1>
+                                <p className="text-gray-600">Gérez vos finances personnelles</p>
+                            </div>
+                            
+                            {authMode === 'login' ? (
+                                <form onSubmit={handleLogin} className="space-y-4">
+                                    <h2 className="text-xl font-semibold text-center mb-6">Connexion</h2>
+                                    
+                                    {authError && (
+                                        <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm">
+                                            {authError}
+                                        </div>
+                                    )}
+                                    
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                                        <input
+                                            type="email"
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            placeholder="votre@email.com"
+                                            required
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Mot de passe</label>
+                                        <input
+                                            type="password"
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            placeholder="••••••••"
+                                            required
+                                        />
+                                    </div>
+                                    
+                                    <button
+                                        type="submit"
+                                        className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                                    >
+                                        Se connecter
+                                    </button>
+                                    
+                                    <div className="text-center mt-4">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setAuthMode('register');
+                                                setAuthError('');
+                                            }}
+                                            className="text-blue-600 hover:text-blue-800 text-sm"
+                                        >
+                                            Pas encore de compte ? S'inscrire
+                                        </button>
+                                    </div>
+                                </form>
+                            ) : (
+                                <form onSubmit={handleRegister} className="space-y-4">
+                                    <h2 className="text-xl font-semibold text-center mb-6">Inscription</h2>
+                                    
+                                    {authError && (
+                                        <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm">
+                                            {authError}
+                                        </div>
+                                    )}
+                                    
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                                        <input
+                                            type="email"
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            placeholder="votre@email.com"
+                                            required
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Mot de passe</label>
+                                        <input
+                                            type="password"
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            placeholder="••••••••"
+                                            required
+                                            minLength="6"
+                                        />
+                                        <p className="text-xs text-gray-500 mt-1">Minimum 6 caractères</p>
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Confirmer le mot de passe</label>
+                                        <input
+                                            type="password"
+                                            value={confirmPassword}
+                                            onChange={(e) => setConfirmPassword(e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            placeholder="••••••••"
+                                            required
+                                        />
+                                    </div>
+                                    
+                                    <button
+                                        type="submit"
+                                        className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                                    >
+                                        S'inscrire
+                                    </button>
+                                    
+                                    <div className="text-center mt-4">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setAuthMode('login');
+                                                setAuthError('');
+                                            }}
+                                            className="text-blue-600 hover:text-blue-800 text-sm"
+                                        >
+                                            Déjà un compte ? Se connecter
+                                        </button>
+                                    </div>
+                                </form>
+                            )}
+                            
+                            <div className="mt-6 text-center text-xs text-gray-500">
+                                Connectez-vous pour synchroniser vos données entre tous vos appareils
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen bg-gray-50">
+                    {/* Indicateur de synchronisation */}
+                    <div className={`sync-status ${getStatusColor()}`}>
+                        <i className={`fas ${syncStatus === 'synchronisé' ? 'fa-sync-alt fa-spin' : syncStatus === 'sauvegarde...' ? 'fa-spinner fa-spin' : syncStatus === 'connexion...' || syncStatus === 'inscription...' ? 'fa-spinner fa-spin' : syncStatus === 'connecté' ? 'fa-wifi' : 'fa-exclamation-circle'}`}></i>
+                        <span className="ml-2">{syncStatus}</span>
+                        {syncMessage && <span className="ml-2">• {syncMessage}</span>}
+                    </div>
+
+                    {/* Mobile menu button */}
+                    <div className="mobile-menu-button fixed top-4 left-4 z-40">
+                        <button
+                            onClick={() => setSidebarOpen(!sidebarOpen)}
+                            className="bg-white p-3 rounded-lg shadow-lg"
+                        >
+                            <i className="fas fa-bars text-gray-600"></i>
+                        </button>
+                    </div>
+
+                    {/* Navigation latérale - Desktop */}
+                    <div className="sidebar fixed left-0 top-0 h-full w-64 bg-white hidden md:block">
+                        <div className="p-6 border-b">
+                            <div className="flex items-center space-x-3">
+                                <i className="fas fa-wallet text-blue-600 text-2xl"></i>
+                                <div>
+                                    <h1 className="text-xl font-bold text-gray-800">Budget Personnel</h1>
+                                    <p className="text-sm text-gray-500">Gestion des finances</p>
+                                    {user && (
+                                        <p className="text-xs text-gray-400 mt-1 truncate">{user.email}</p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <nav className="mt-6">
+                            {menuItems.map(item => (
+                                <button
+                                    key={item.id}
+                                    onClick={() => {
+                                        setCurrentView(item.id);
+                                        setSidebarOpen(false);
+                                    }}
+                                    className={`w-full flex items-center space-x-3 px-6 py-3 text-left transition-colors nav-item ${
+                                        currentView === item.id ? 'active' : 'text-gray-600 hover:bg-gray-50'
+                                    }`}
+                                >
+                                    <i className={`fas ${item.icon} w-5 h-5`}></i>
+                                    <span>{item.label}</span>
+                                </button>
+                            ))}
+                            
+                            {/* Boutons d'export/import */}
+                            <div className="px-6 py-4 border-t mt-4">
+                                <button
+                                    onClick={saveToCloud}
+                                    className="w-full flex items-center justify-center space-x-2 px-4 py-2 text-left text-sm bg-blue-600 hover:bg-blue-700 text-white rounded mb-2"
+                                >
+                                    <i className="fas fa-cloud-upload-alt"></i>
+                                    <span>Sauvegarder dans le cloud</span>
+                                </button>
+                                
+                                <button
+                                    onClick={resetData}
+                                    className="w-full flex items-center space-x-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 rounded"
+                                >
+                                    <i className="fas fa-trash-alt"></i>
+                                    <span>Réinitialiser</span>
+                                </button>
+                            </div>
+                            
+                            {/* Déconnexion */}
+                            <div className="px-6 py-4 border-t mt-4">
+                                <button
+                                    onClick={signOut}
+                                    className="w-full flex items-center space-x-2 px-4 py-2 text-left text-sm text-gray-600 hover:bg-gray-50 rounded"
+                                >
+                                    <i className="fas fa-sign-out-alt"></i>
+                                    <span>Déconnexion</span>
+                                </button>
+                            </div>
+                            
+                            {/* Informations de synchronisation */}
+                            <div className="px-6 py-4 border-t mt-4 text-xs text-gray-500">
+                                <div className="flex items-center">
+                                    <i className={`fas ${isOnline ? 'fa-circle text-green-500' : 'fa-circle text-gray-400'} mr-2`}></i>
+                                    <span>{isOnline ? 'Connecté au cloud' : 'Hors ligne'}</span>
+                                </div>
+                                {user && (
+                                    <div className="mt-1 truncate">
+                                        <span>Utilisateur: {user.email}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </nav>
+                    </div>
+
+                    {/* Navigation latérale - Mobile */}
+                    {sidebarOpen && (
+                        <div className="sidebar-mobile fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden">
+                            <div className="bg-white w-64 h-full">
+                                <div className="p-6 border-b">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center space-x-3">
+                                            <i className="fas fa-wallet text-blue-600 text-2xl"></i>
+                                            <div>
+                                                <h1 className="text-xl font-bold text-gray-800">Budget Personnel</h1>
+                                                <p className="text-sm text-gray-500">Gestion des finances</p>
+                                                {user && (
+                                                    <p className="text-xs text-gray-400 mt-1 truncate">{user.email}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => setSidebarOpen(false)}
+                                            className="text-gray-500"
+                                        >
+                                            <i className="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <nav className="mt-6">
+                                    {menuItems.map(item => (
+                                        <button
+                                            key={item.id}
+                                            onClick={() => {
+                                                setCurrentView(item.id);
+                                                setSidebarOpen(false);
+                                            }}
+                                            className={`w-full flex items-center space-x-3 px-6 py-3 text-left transition-colors nav-item ${
+                                                currentView === item.id ? 'active' : 'text-gray-600 hover:bg-gray-50'
+                                            }`}
+                                        >
+                                            <i className={`fas ${item.icon} w-5 h-5`}></i>
+                                            <span>{item.label}</span>
+                                        </button>
+                                    ))}
+                                    
+                                    {/* Boutons d'export/import mobile */}
+                                    <div className="px-6 py-4 border-t mt-4">
+                                        <button
+                                            onClick={() => {
+                                                saveToCloud();
+                                                setSidebarOpen(false);
+                                            }}
+                                            className="w-full flex items-center justify-center space-x-2 px-4 py-2 text-left text-sm bg-blue-600 hover:bg-blue-700 text-white rounded mb-2"
+                                        >
+                                            <i className="fas fa-cloud-upload-alt"></i>
+                                            <span>Sauvegarder</span>
+                                        </button>
+                                        
+                                        <button
+                                            onClick={() => {
+                                                resetData();
+                                                setSidebarOpen(false);
+                                            }}
+                                            className="w-full flex items-center space-x-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 rounded"
+                                        >
+                                            <i className="fas fa-trash-alt"></i>
+                                            <span>Réinitialiser</span>
+                                        </button>
+                                    </div>
+                                    
+                                    {/* Déconnexion mobile */}
+                                    <div className="px-6 py-4 border-t mt-4">
+                                        <button
+                                            onClick={() => {
+                                                signOut();
+                                                setSidebarOpen(false);
+                                            }}
+                                            className="w-full flex items-center space-x-2 px-4 py-2 text-left text-sm text-gray-600 hover:bg-gray-50 rounded"
+                                        >
+                                            <i className="fas fa-sign-out-alt"></i>
+                                            <span>Déconnexion</span>
+                                        </button>
+                                    </div>
+                                    
+                                    {/* Informations de synchronisation mobile */}
+                                    <div className="px-6 py-4 border-t mt-4 text-xs text-gray-500">
+                                        <div className="flex items-center">
+                                            <i className={`fas ${isOnline ? 'fa-circle text-green-500' : 'fa-circle text-gray-400'} mr-2`}></i>
+                                            <span>{isOnline ? 'Connecté au cloud' : 'Hors ligne'}</span>
+                                        </div>
+                                        {user && (
+                                            <div className="mt-1 truncate">
+                                                <span>Utilisateur: {user.email}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </nav>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Contenu principal */}
+                    <div className="main-content p-4 md:p-8 pt-20 md:pt-8">
+                        <AnimatePresence mode="wait">
+                            {currentView === 'dashboard' && (
+                                <div key="dashboard" className="animate-fade-in">
+                                    <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6">Tableau de bord</h2>
+                                    
+                                    {/* Solde initial */}
+                                    <div className="bg-white rounded-lg card p-4 md:p-6 mb-6">
+                                        <h3 className="text-lg font-semibold mb-4">Solde initial</h3>
+                                        <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-4">
+                                            <input
+                                                type="number"
+                                                value={soldeInitial}
+                                                onChange={(e) => setSoldeInitial(parseFloat(e.target.value) || 0)}
+                                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
+                                                placeholder="Solde initial"
+                                            />
+                                            <span className="text-xl md:text-2xl font-bold text-blue-600">{formatTND(soldeInitial)}</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Statistiques */}
+                                    <div className="stats-grid grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6">
+                                        <div className="bg-white rounded-lg card p-4 md:p-6 hover:shadow-lg transition-shadow">
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <p className="text-sm text-gray-500">Solde actuel</p>
+                                                    <p className={`text-2xl md:text-3xl font-bold ${soldeActuel >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatTND(soldeActuel)}</p>
+                                                </div>
+                                                <i className={`fas ${soldeActuel >= 0 ? 'fa-piggy-bank text-green-500' : 'fa-exclamation-triangle text-red-500'} text-xl md:text-2xl`}></i>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="bg-white rounded-lg card p-4 md:p-6 hover:shadow-lg transition-shadow">
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <p className="text-sm text-gray-500">Total des revenus</p>
+                                                    <p className="text-2xl md:text-3xl font-bold text-green-600">{formatTND(totalRevenus)}</p>
+                                                </div>
+                                                <i className="fas fa-arrow-down text-green-500 text-xl md:text-2xl"></i>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="bg-white rounded-lg card p-4 md:p-6 hover:shadow-lg transition-shadow">
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <p className="text-sm text-gray-500">Total des dépenses</p>
+                                                    <p className="text-2xl md:text-3xl font-bold text-red-600">{formatTND(totalDepenses)}</p>
+                                                </div>
+                                                <i className="fas fa-arrow-up text-red-500 text-xl md:text-2xl"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Répartition par catégories */}
+                                    <div className="mb-6">
+                                        <h3 className="text-lg md:text-xl font-semibold mb-4">Répartition des dépenses</h3>
+                                        {Object.keys(depensesParCategorie).length > 0 ? (
+                                            <div className="bg-white rounded-lg card p-4 md:p-6">
+                                                <div className="space-y-3">
+                                                    {Object.entries(depensesParCategorie)
+                                                        .sort(([,a], [,b]) => b - a)
+                                                        .map(([categorie, montant]) => {
+                                                            const percentage = totalDepenses > 0 ? (montant / totalDepenses) * 100 : 0;
+                                                            const categoryInfo = getCategoryInfo(categorie);
+                                                            return (
+                                                                <div key={categorie} className="space-y-2">
+                                                                    <div className="flex justify-between text-sm">
+                                                                        <div className="flex items-center">
+                                                                            <div className={`w-3 h-3 rounded-full ${categoryInfo.color} mr-2`}></div>
+                                                                            <span>{categoryInfo.label}</span>
+                                                                        </div>
+                                                                        <span className="font-medium">{formatTND(montant)} ({percentage.toFixed(1)}%)</span>
+                                                                    </div>
+                                                                    <div className="w-full bg-gray-200 rounded-full h-2">
+                                                                        <div 
+                                                                            className={`h-2 rounded-full ${categoryInfo.color}`} 
+                                                                            style={{ width: `${percentage}%` }}
+                                                                        ></div>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="bg-white rounded-lg card p-6 md:p-8 text-center">
+                                                <i className="fas fa-chart-pie text-gray-400 text-3xl md:text-4xl mx-auto mb-3"></i>
+                                                <p className="text-gray-600 text-sm md:text-base">Aucune dépense enregistrée</p>
+                                                <p className="text-gray-500 text-xs mt-2">Ajoutez des dépenses pour commencer à recevoir des rappels</p>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Transactions récentes */}
+                                    <div>
+                                        <h3 className="text-lg md:text-xl font-semibold mb-4">Transactions récentes</h3>
+                                        {transactions.length > 0 ? (
+                                            <div className="bg-white rounded-lg card overflow-hidden">
+                                                <div className="divide-y">
+                                                    {transactions.slice(0, 5).map(transaction => {
+                                                        const categoryInfo = getCategoryInfo(transaction.categorie);
+                                                        return (
+                                                            <div key={transaction.id} className="p-3 md:p-4 hover:bg-gray-50 transition-colors">
+                                                                <div className="flex flex-col md:flex-row md:items-center justify-between space-y-2 md:space-y-0">
+                                                                    <div className="flex items-center space-x-3">
+                                                                        <div className={`p-2 rounded-full ${categoryInfo.color} text-white`}>
+                                                                            <i className={`fas ${getCategoryIcon(transaction.categorie)}`}></i>
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="font-semibold text-sm md:text-base">{transaction.description || getCategoryLabel(transaction.categorie)}</p>
+                                                                            <p className="text-xs text-gray-500">{transaction.date} • {categoryInfo.label}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="text-right">
+                                                                        <p className={`font-semibold text-sm md:text-base ${transaction.type === 'revenu' ? 'text-green-600' : 'text-red-600'}`}>
+                                                                            {transaction.type === 'revenu' ? '+' : '-'}{formatTND(transaction.montant)}
+                                                                        </p>
+                                                                        <p className="text-xs text-gray-500">{transaction.methodePaiement}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="bg-white rounded-lg card p-8 md:p-12 text-center">
+                                                <i className="fas fa-exchange-alt text-gray-400 text-3xl md:text-4xl mx-auto mb-3"></i>
+                                                <p className="text-gray-600 text-sm md:text-base">Aucune transaction enregistrée</p>
+                                                <p className="text-gray-500 text-xs mt-2">Commencez par ajouter votre première transaction</p>
+                                                <button
+                                                    onClick={() => setCurrentView('ajout')}
+                                                    className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                                                >
+                                                    Ajouter une transaction
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {currentView === 'ajout' && (
+                                <div key="ajout" className="animate-fade-in">
+                                    <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6">Ajouter une transaction</h2>
+                                    
+                                    <div className="bg-white rounded-lg card p-4 md:p-6">
+                                        <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+                                            <div className="form-grid grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">Type de transaction</label>
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setFormData({...formData, type: 'depense'})}
+                                                            className={`py-2 px-4 rounded-lg border ${
+                                                                formData.type === 'depense' 
+                                                                    ? 'bg-red-100 border-red-500 text-red-700' 
+                                                                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                                                            }`}
+                                                        >
+                                                            <i className="fas fa-arrow-up mr-2"></i>
+                                                            Dépense
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setFormData({...formData, type: 'revenu'})}
+                                                            className={`py-2 px-4 rounded-lg border ${
+                                                                formData.type === 'revenu' 
+                                                                    ? 'bg-green-100 border-green-500 text-green-700' 
+                                                                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                                                            }`}
+                                                        >
+                                                            <i className="fas fa-arrow-down mr-2"></i>
+                                                            Revenu
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                                                    <input
+                                                        type="date"
+                                                        value={formData.date}
+                                                        onChange={(e) => setFormData({...formData, date: e.target.value})}
+                                                        className="w-full px-3 py-2 md:px-4 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                        required
+                                                    />
+                                                </div>
+                                                
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">Montant (TND)</label>
+                                                    <input
+                                                        type="number"
+                                                        step="0.001"
+                                                        value={formData.montant}
+                                                        onChange={(e) => setFormData({...formData, montant: e.target.value})}
+                                                        className="w-full px-3 py-2 md:px-4 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                        placeholder="Montant"
+                                                        required
+                                                    />
+                                                </div>
+                                                
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">Méthode de paiement</label>
+                                                    <select
+                                                        value={formData.methodePaiement}
+                                                        onChange={(e) => setFormData({...formData, methodePaiement: e.target.value})}
+                                                        className="w-full px-3 py-2 md:px-4 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                    >
+                                                        <option value="especes">Espèces</option>
+                                                        <option value="carte-debit">Carte de débit</option>
+                                                        <option value="carte-credit">Carte de crédit</option>
+                                                        <option value="virement">Virement bancaire</option>
+                                                        <option value="cheque">Chèque</option>
+                                                        <option value="autre">Autre</option>
+                                                    </select>
+                                                </div>
+                                                
+                                                <div className="md:col-span-2">
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">Description (optionnel)</label>
+                                                    <input
+                                                        type="text"
+                                                        value={formData.description}
+                                                        onChange={(e) => setFormData({...formData, description: e.target.value})}
+                                                        className="w-full px-3 py-2 md:px-4 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                        placeholder="Description de la transaction"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Catégories */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    {formData.type === 'depense' ? 'Catégorie de dépense' : 'Catégorie de revenu'}
+                                                </label>
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                                    {(formData.type === 'depense' ? categoriesDepenses : categoriesRevenus).map(category => (
+                                                        <button
+                                                            key={category.id}
+                                                            type="button"
+                                                            onClick={() => setFormData({...formData, categorie: category.id})}
+                                                            className={`flex flex-col items-center p-3 rounded-lg border ${
+                                                                formData.categorie === category.id 
+                                                                    ? 'border-blue-500 bg-blue-50' 
+                                                                    : 'border-gray-300 hover:bg-gray-50'
+                                                            }`}
+                                                        >
+                                                            <div className={`w-8 h-8 rounded-full ${category.color} flex items-center justify-center text-white mb-2`}>
+                                                                <i className={`fas ${category.icon}`}></i>
+                                                            </div>
+                                                            <span className="text-xs text-center">{category.label}</span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
+                                                <button
+                                                    type="submit"
+                                                    className="flex-1 bg-blue-600 text-white py-2 md:py-3 px-4 md:px-6 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                                                >
+                                                    Ajouter la transaction
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setCurrentView('dashboard');
+                                                        setSidebarOpen(false);
+                                                    }}
+                                                    className="px-4 py-2 md:px-6 md:py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                                                >
+                                                    Annuler
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            )}
+
+                            {currentView === 'historique' && (
+                                <div key="historique" className="animate-fade-in">
+                                    <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6">Historique des transactions</h2>
+                                    
+                                    {/* Filtres et recherche */}
+                                    <div className="bg-white rounded-lg card p-4 md:p-6 mb-6">
+                                        <div className="flex flex-col md:flex-row md:items-center space-y-3 md:space-y-0 md:space-x-4">
+                                            <div className="flex-1">
+                                                <div className="relative">
+                                                    <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
+                                                    <input
+                                                        type="text"
+                                                        value={searchTerm}
+                                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                                        placeholder="Rechercher par description ou catégorie..."
+                                                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                                    />
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="flex items-center space-x-2">
+                                                <i className="fas fa-filter text-gray-500 text-sm"></i>
+                                                <select
+                                                    value={filterCategorie}
+                                                    onChange={(e) => setFilterCategorie(e.target.value)}
+                                                    className="px-3 py-2 md:px-4 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                                >
+                                                    <option value="all">Toutes les catégories</option>
+                                                    {categoriesDepenses.map(cat => (
+                                                        <option key={cat.id} value={cat.id}>{cat.label}</option>
+                                                    ))}
+                                                    {categoriesRevenus.map(cat => (
+                                                        <option key={cat.id} value={cat.id}>{cat.label}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            
+                                            <div className="flex items-center space-x-2">
+                                                <i className="fas fa-calendar text-gray-500 text-sm"></i>
+                                                <select
+                                                    value={filterPeriode}
+                                                    onChange={(e) => setFilterPeriode(e.target.value)}
+                                                    className="px-3 py-2 md:px-4 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                                >
+                                                    <option value="all">Toute la période</option>
+                                                    <option value="semaine">Semaine dernière</option>
+                                                    <option value="mois">Mois dernier</option>
+                                                    <option value="annee">Année dernière</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Liste des transactions */}
+                                    <div className="space-y-3 md:space-y-4">
+                                        {transactionsFiltrees.length > 0 ? (
+                                            transactionsFiltrees.map(transaction => {
+                                                const categoryInfo = getCategoryInfo(transaction.categorie);
+                                                return (
+                                                    <div
+                                                        key={transaction.id}
+                                                        className="bg-white rounded-lg card p-4 md:p-6 animate-fade-in"
+                                                    >
+                                                        <div className="flex flex-col">
+                                                            <div className="flex items-start space-x-3 mb-3">
+                                                                <div className={`p-2 md:p-3 rounded-full ${categoryInfo.color} text-white`}>
+                                                                    <i className={`fas ${getCategoryIcon(transaction.categorie)}`}></i>
+                                                                </div>
+                                                                <div className="flex-1">
+                                                                    <div className="flex flex-wrap items-center space-x-2 mb-2">
+                                                                        <h3 className="text-lg font-semibold">{transaction.description || getCategoryLabel(transaction.categorie)}</h3>
+                                                                        <span className="text-xs text-gray-500">•</span>
+                                                                        <span className="text-xs text-gray-500">{transaction.date}</span>
+                                                                    </div>
+                                                                    
+                                                                    <div className="history-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4">
+                                                                        <div>
+                                                                            <p className="text-xs text-gray-500">Montant</p>
+                                                                            <p className={`font-medium text-sm ${transaction.type === 'revenu' ? 'text-green-600' : 'text-red-600'}`}>
+                                                                                {transaction.type === 'revenu' ? '+' : '-'}{formatTND(transaction.montant)}
+                                                                            </p>
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="text-xs text-gray-500">Catégorie</p>
+                                                                            <p className="font-medium text-sm">{categoryInfo.label}</p>
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="text-xs text-gray-500">Méthode</p>
+                                                                            <p className="font-medium text-sm">{transaction.methodePaiement}</p>
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="text-xs text-gray-500">Type</p>
+                                                                            <p className={`font-medium text-sm ${transaction.type === 'revenu' ? 'text-green-600' : 'text-red-600'}`}>
+                                                                                {transaction.type === 'revenu' ? 'Revenu' : 'Dépense'}
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })
+                                        ) : (
+                                            <div className="bg-white rounded-lg card p-8 md:p-12 text-center">
+                                                <i className="fas fa-history text-gray-400 text-3xl md:text-4xl mx-auto mb-3"></i>
+                                                <p className="text-gray-600 text-sm md:text-base">Aucune transaction trouvée</p>
+                                                <p className="text-gray-500 text-xs mt-2">
+                                                    {transactions.length === 0 
+                                                        ? "Commencez par ajouter votre première transaction" 
+                                                        : "Aucune transaction correspond à vos critères de recherche"}
+                                                </p>
+                                                {transactions.length === 0 && (
+                                                    <button
+                                                        onClick={() => setCurrentView('ajout')}
+                                                        className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                                                    >
+                                                        Ajouter une transaction
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
 </body>
 </html>
