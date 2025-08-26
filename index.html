@@ -7,23 +7,14 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap');
         body {
             font-family: 'Roboto', sans-serif;
             background-color: #f8fafc;
             margin: 0;
             padding: 0;
-        }
-        .sidebar {
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            z-index: 50;
         }
         .card {
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -33,117 +24,17 @@
             transform: translateY(-2px);
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
-        .nav-item.active {
-            background-color: #eff6ff;
-            border-right: 3px solid #3b82f6;
-            color: #3b82f6;
-        }
-        .reminder-card {
-            border-left-width: 4px;
-        }
-        .mobile-menu-button {
-            display: none;
-        }
-        .sidebar-mobile {
-            display: none;
-        }
-        .sync-status {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            padding: 8px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-            z-index: 1000;
-        }
-        
-        @media (max-width: 768px) {
-            .sidebar {
-                display: none;
-            }
-            .sidebar-mobile {
-                display: block;
-            }
-            .main-content {
-                margin-left: 0;
-                padding: 1rem;
-            }
-            .mobile-menu-button {
-                display: block;
-            }
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-            .history-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-        
-        @media (min-width: 769px) {
-            .main-content {
-                margin-left: 16rem;
-            }
-        }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        // Configuration Firebase - Nouveau projet
-        const firebaseConfig = {
-          apiKey: "AIzaSyD5ELdf07UoR-viw5YyYP384K7wPzlGz_E",
-          authDomain: "kia-maintenance-tracker.firebaseapp.com",
-          databaseURL: "https://kia-maintenance-tracker-default-rtdb.europe-west1.firebasedatabase.app",
-          projectId: "kia-maintenance-tracker",
-          storageBucket: "kia-maintenance-tracker.firebasestorage.app",
-          messagingSenderId: "625511645256",
-          appId: "1:625511645256:web:da1b38436fbebe4a3b187d",
-          measurementId: "G-2R4WRHQWK6"
-        };
-
-        // Initialiser Firebase
-        let database = null;
-        let auth = null;
-        let firebaseInitialized = false;
-        
-        try {
-            if (typeof firebase !== 'undefined') {
-                const app = firebase.initializeApp(firebaseConfig);
-                database = firebase.database();
-                auth = firebase.auth();
-                firebaseInitialized = true;
-                console.log("Firebase initialisé avec succès");
-            } else {
-                console.error("Firebase non disponible");
-            }
-        } catch (error) {
-            console.error('Firebase initialization error:', error);
-        }
-
         const { useState, useEffect } = React;
-        const { motion, AnimatePresence } = window.FramerMotion || { motion: 'div', AnimatePresence: ({children}) => children };
 
         const App = () => {
             const [currentView, setCurrentView] = useState('dashboard');
             const [transactions, setTransactions] = useState([]);
-            const [isOnline, setIsOnline] = useState(firebaseInitialized);
-            const [syncStatus, setSyncStatus] = useState(firebaseInitialized ? 'connecté' : 'hors ligne');
-            const [syncMessage, setSyncMessage] = useState('');
-            const [user, setUser] = useState(null);
-            const [loading, setLoading] = useState(true);
-            
-            // États pour l'authentification
-            const [authMode, setAuthMode] = useState('login'); // 'login' ou 'register'
-            const [email, setEmail] = useState('');
-            const [password, setPassword] = useState('');
-            const [confirmPassword, setConfirmPassword] = useState('');
-            const [authError, setAuthError] = useState('');
-
             const [formData, setFormData] = useState({
                 type: 'depense',
                 categorie: 'alimentation',
@@ -153,257 +44,26 @@
                 methodePaiement: 'especes'
             });
 
-            const [searchTerm, setSearchTerm] = useState('');
-            const [filterCategorie, setFilterCategorie] = useState('all');
-            const [filterPeriode, setFilterPeriode] = useState('all'); // 'all', 'semaine', 'mois', 'annee'
-            const [sidebarOpen, setSidebarOpen] = useState(false);
-
-            // Catégories de dépenses
-            const categoriesDepenses = [
-                { id: 'alimentation', label: 'Alimentation', icon: 'fa-utensils', color: 'bg-red-500' },
-                { id: 'logement', label: 'Logement', icon: 'fa-home', color: 'bg-blue-500' },
-                { id: 'transport', label: 'Transport', icon: 'fa-car', color: 'bg-green-500' },
-                { id: 'sante', label: 'Santé', icon: 'fa-heartbeat', color: 'bg-pink-500' },
-                { id: 'loisirs', label: 'Loisirs', icon: 'fa-gamepad', color: 'bg-yellow-500' },
-                { id: 'education', label: 'Éducation', icon: 'fa-graduation-cap', color: 'bg-purple-500' },
-                { id: 'vetements', label: 'Vêtements', icon: 'fa-tshirt', color: 'bg-indigo-500' },
-                { id: 'autres', label: 'Autres', icon: 'fa-ellipsis-h', color: 'bg-gray-500' }
-            ];
-
-            // Catégories de revenus
-            const categoriesRevenus = [
-                { id: 'salaire', label: 'Salaire', icon: 'fa-wallet', color: 'bg-green-500' },
-                { id: 'investissement', label: 'Investissement', icon: 'fa-chart-line', color: 'bg-blue-500' },
-                { id: 'cadeau', label: 'Cadeau', icon: 'fa-gift', color: 'bg-yellow-500' },
-                { id: 'autres-revenus', label: 'Autres revenus', icon: 'fa-coins', color: 'bg-purple-500' }
-            ];
-
-            // Gérer l'état d'authentification
+            // Charger les données depuis localStorage au démarrage
             useEffect(() => {
-                if (auth) {
-                    const unsubscribe = auth.onAuthStateChanged((user) => {
-                        if (user) {
-                            console.log("Utilisateur connecté:", user);
-                            setUser(user);
-                            setLoading(false);
-                        } else {
-                            console.log("Utilisateur déconnecté");
-                            setUser(null);
-                            setLoading(false);
-                        }
-                    });
-                    return () => unsubscribe();
+                const savedTransactions = localStorage.getItem('budgetTransactions');
+                if (savedTransactions) {
+                    try {
+                        setTransactions(JSON.parse(savedTransactions));
+                    } catch (error) {
+                        console.error('Erreur de chargement:', error);
+                        setTransactions([]);
+                    }
                 }
             }, []);
 
-            // Charger les données lorsque l'utilisateur est connecté
+            // Sauvegarder les données dans localStorage
             useEffect(() => {
-                if (user && database) {
-                    const loadData = async () => {
-                        try {
-                            console.log("Chargement des données depuis Firebase pour l'utilisateur:", user.uid);
-                            const snapshot = await database.ref(`users/${user.uid}/budgetData`).once('value');
-                            const data = snapshot.val();
-                            console.log("Données chargées:", data);
-                            
-                            if (data) {
-                                if (data.transactions) {
-                                    setTransactions(data.transactions);
-                                }
-                            }
-                            setIsOnline(true);
-                            setSyncStatus('synchronisé');
-                            setSyncMessage('Données chargées');
-                        } catch (error) {
-                            console.error('Erreur de chargement:', error);
-                            setSyncStatus('erreur');
-                            setSyncMessage('Erreur de chargement');
-                        }
-                    };
-                    
-                    loadData();
-                    
-                    // Écouter les changements en temps réel
-                    const unsubscribe = database.ref(`users/${user.uid}/budgetData`).on('value', (snapshot) => {
-                        const data = snapshot.val();
-                        console.log("Données mises à jour:", data);
-                        if (data) {
-                            if (data.transactions) {
-                                setTransactions(data.transactions);
-                            }
-                        }
-                        setSyncStatus('synchronisé');
-                    }, (error) => {
-                        console.error("Erreur d'écoute:", error);
-                    });
-                    
-                    return () => unsubscribe();
-                }
-            }, [user]);
-
-            // Fonction de connexion
-            const handleLogin = async (e) => {
-                e.preventDefault();
-                if (auth) {
-                    try {
-                        setSyncStatus('connexion...');
-                        setSyncMessage('Connexion en cours');
-                        setAuthError('');
-                        await auth.signInWithEmailAndPassword(email, password);
-                        setSyncMessage('Connexion réussie');
-                    } catch (error) {
-                        console.error('Erreur de connexion:', error);
-                        setAuthError(error.message);
-                        setSyncStatus('erreur');
-                        setSyncMessage('Erreur de connexion');
-                    }
-                }
-            };
-
-            // Fonction d'inscription
-            const handleRegister = async (e) => {
-                e.preventDefault();
-                if (password !== confirmPassword) {
-                    setAuthError('Les mots de passe ne correspondent pas');
-                    return;
-                }
-                if (auth) {
-                    try {
-                        setSyncStatus('inscription...');
-                        setSyncMessage('Inscription en cours');
-                        setAuthError('');
-                        await auth.createUserWithEmailAndPassword(email, password);
-                        setSyncMessage('Inscription réussie');
-                    } catch (error) {
-                        console.error('Erreur d\'inscription:', error);
-                        setAuthError(error.message);
-                        setSyncStatus('erreur');
-                        setSyncMessage('Erreur d\'inscription');
-                    }
-                }
-            };
-
-            // Fonction de déconnexion
-            const signOut = async () => {
-                if (auth) {
-                    try {
-                        await auth.signOut();
-                        setTransactions([]);
-                        setSyncMessage('Déconnexion réussie');
-                    } catch (error) {
-                        console.error('Erreur de déconnexion:', error);
-                    }
-                }
-            };
-
-            // Fonction de sauvegarde manuelle
-            const saveToCloud = async () => {
-                if (database && user) {
-                    try {
-                        setSyncStatus('sauvegarde...');
-                        setSyncMessage('Sauvegarde en cours');
-                        
-                        await database.ref(`users/${user.uid}/budgetData`).set({
-                            transactions: transactions
-                        });
-                        
-                        setSyncStatus('synchronisé');
-                        setSyncMessage('Données sauvegardées');
-                        setTimeout(() => setSyncMessage(''), 3000);
-                        
-                        console.log("Données sauvegardées avec succès");
-                    } catch (error) {
-                        console.error('Erreur de sauvegarde:', error);
-                        setSyncStatus('erreur');
-                        setSyncMessage('Erreur de sauvegarde');
-                    }
-                } else {
-                    setSyncStatus('hors ligne');
-                    setSyncMessage('Non connecté');
-                }
-            };
-
-            // Calculs pour le tableau de bord
-            const totalDepenses = transactions
-                .filter(t => t.type === 'depense')
-                .reduce((sum, transaction) => sum + parseFloat(transaction.montant), 0);
-            
-            const totalRevenus = transactions
-                .filter(t => t.type === 'revenu')
-                .reduce((sum, transaction) => sum + parseFloat(transaction.montant), 0);
-            
-            const soldeActuel = totalRevenus - totalDepenses;
-            
-            const depensesParCategorie = {};
-            transactions
-                .filter(t => t.type === 'depense')
-                .forEach(transaction => {
-                    const cat = transaction.categorie;
-                    depensesParCategorie[cat] = (depensesParCategorie[cat] || 0) + parseFloat(transaction.montant);
-                });
-
-            // Filtrer les transactions par période
-            const filterTransactionsByPeriod = (transactions, period) => {
-                if (period === 'all') return transactions;
-                
-                const now = new Date();
-                const filtered = transactions.filter(transaction => {
-                    const transactionDate = new Date(transaction.date);
-                    
-                    switch(period) {
-                        case 'semaine':
-                            const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-                            return transactionDate >= oneWeekAgo;
-                        case 'mois':
-                            const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-                            return transactionDate >= oneMonthAgo;
-                        case 'annee':
-                            const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-                            return transactionDate >= oneYearAgo;
-                        default:
-                            return true;
-                    }
-                });
-                
-                return filtered;
-            };
-
-            const transactionsFiltrees = filterTransactionsByPeriod(
-                transactions.filter(transaction => {
-                    const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                         transaction.categorie.toLowerCase().includes(searchTerm.toLowerCase());
-                    const matchesFilter = filterCategorie === 'all' || transaction.categorie === filterCategorie;
-                    return matchesSearch && matchesFilter;
-                }),
-                filterPeriode
-            );
+                localStorage.setItem('budgetTransactions', JSON.stringify(transactions));
+            }, [transactions]);
 
             const handleSubmit = (e) => {
                 e.preventDefault();
-                
-                // Définir l'intervalle en fonction du type d'entretien
-                let intervalle = 8000; // par défaut pour vidange
-                switch(formData.type) {
-                    case 'vidange':
-                        intervalle = 8000;
-                        break;
-                    case 'freins':
-                        intervalle = 20000;
-                        break;
-                    case 'pneus':
-                        intervalle = 100000;
-                        break;
-                    case 'filtres':
-                        intervalle = 20000;
-                        break;
-                    case 'courroie':
-                        intervalle = 20000;
-                        break;
-                    case 'bougies':
-                        intervalle = 90000;
-                        break;
-                }
-                
                 const newTransaction = {
                     id: Date.now(),
                     ...formData,
@@ -420,583 +80,370 @@
                     methodePaiement: 'especes'
                 });
                 setCurrentView('dashboard');
-                setSidebarOpen(false);
             };
 
-            const getCategoryInfo = (categorie) => {
-                const depenseCat = categoriesDepenses.find(cat => cat.id === categorie);
-                const revenuCat = categoriesRevenus.find(cat => cat.id === categorie);
-                return depenseCat || revenuCat || { label: categorie, icon: 'fa-question', color: 'bg-gray-500' };
+            const getTotalDepenses = () => {
+                return transactions
+                    .filter(t => t.type === 'depense')
+                    .reduce((sum, t) => sum + t.montant, 0);
             };
 
-            const getCategoryColor = (categorie) => {
-                const catInfo = getCategoryInfo(categorie);
-                return catInfo.color;
+            const getTotalRevenus = () => {
+                return transactions
+                    .filter(t => t.type === 'revenu')
+                    .reduce((sum, t) => sum + t.montant, 0);
             };
 
-            const getCategoryIcon = (categorie) => {
-                const catInfo = getCategoryInfo(categorie);
-                return catInfo.icon;
+            const getSolde = () => {
+                return getTotalRevenus() - getTotalDepenses();
             };
 
-            const getCategoryLabel = (categorie) => {
-                const catInfo = getCategoryInfo(categorie);
-                return catInfo.label;
-            };
-
-            const getUrgenceColor = (urgence) => {
-                switch(urgence) {
-                    case 'en-retard': return 'border-l-red-500 bg-red-50';
-                    case 'urgent': return 'border-l-orange-500 bg-orange-50';
-                    case 'bientot': return 'border-l-yellow-500 bg-yellow-50';
-                    default: return 'border-l-gray-300 bg-gray-50';
-                }
-            };
-
-            const getTypeLabel = (type) => {
-                switch(type) {
-                    case 'vidange': return 'Vidange';
-                    case 'freins': return 'Freins';
-                    case 'pneus': return 'Pneus';
-                    case 'filtres': return 'Filtres';
-                    case 'courroie': return 'Courroie';
-                    case 'bougies': return 'Bougies';
-                    default: return type;
-                }
-            };
-
-            // Fonction pour formater les montants en TND
             const formatTND = (amount) => {
                 return new Intl.NumberFormat('fr-TN', {
                     style: 'currency',
                     currency: 'TND',
-                    minimumFractionDigits: 3,
-                    maximumFractionDigits: 3
+                    minimumFractionDigits: 3
                 }).format(amount);
             };
 
-            // Fonction pour réinitialiser toutes les données
-            const resetData = () => {
-                if (confirm('Êtes-vous sûr de vouloir réinitialiser toutes les données ?')) {
-                    setTransactions([]);
-                    if (database && user) {
-                        database.ref(`users/${user.uid}/budgetData`).remove();
-                    }
-                }
-            };
-
-            const menuItems = [
-                { id: 'dashboard', label: 'Tableau de bord', icon: 'fa-chart-line' },
-                { id: 'ajout', label: 'Ajouter transaction', icon: 'fa-plus' },
-                { id: 'historique', label: 'Historique', icon: 'fa-history' }
-            ];
-
-            // Couleurs de statut de synchronisation
-            const getStatusColor = () => {
-                switch(syncStatus) {
-                    case 'connecté':
-                    case 'synchronisé':
-                        return 'bg-green-500 text-white';
-                    case 'hors ligne':
-                        return 'bg-gray-500 text-white';
-                    case 'erreur':
-                        return 'bg-red-500 text-white';
-                    case 'sauvegarde...':
-                    case 'connexion...':
-                    case 'inscription...':
-                        return 'bg-blue-500 text-white';
-                    default:
-                        return 'bg-yellow-500 text-white';
-                }
-            };
-
-            // Écran de chargement
-            if (loading) {
-                return (
-                    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                        <div className="text-center">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-                            <p className="mt-4 text-gray-600">Chargement...</p>
-                        </div>
-                    </div>
-                );
-            }
-
-            // Écran d'authentification
-            if (!user) {
-                return (
-                    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-                        <div className="bg-white rounded-lg card p-8 max-w-md w-full">
-                            <div className="text-center mb-8">
-                                <i className="fas fa-wallet text-blue-600 text-4xl mb-4"></i>
-                                <h1 className="text-2xl font-bold text-gray-800">Gestion de Budget Personnel</h1>
-                                <p className="text-gray-600">Gérez vos finances personnelles</p>
-                            </div>
-                            
-                            {authMode === 'login' ? (
-                                <form onSubmit={handleLogin} className="space-y-4">
-                                    <h2 className="text-xl font-semibold text-center mb-6">Connexion</h2>
-                                    
-                                    {authError && (
-                                        <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm">
-                                            {authError}
-                                        </div>
-                                    )}
-                                    
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                                        <input
-                                            type="email"
-                                            value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            placeholder="votre@email.com"
-                                            required
-                                        />
-                                    </div>
-                                    
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Mot de passe</label>
-                                        <input
-                                            type="password"
-                                            value={password}
-                                            onChange={(e) => setPassword(e.target.value)}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            placeholder="••••••••"
-                                            required
-                                        />
-                                    </div>
-                                    
-                                    <button
-                                        type="submit"
-                                        className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                                    >
-                                        Se connecter
-                                    </button>
-                                    
-                                    <div className="text-center mt-4">
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setAuthMode('register');
-                                                setAuthError('');
-                                            }}
-                                            className="text-blue-600 hover:text-blue-800 text-sm"
-                                        >
-                                            Pas encore de compte ? S'inscrire
-                                        </button>
-                                    </div>
-                                </form>
-                            ) : (
-                                <form onSubmit={handleRegister} className="space-y-4">
-                                    <h2 className="text-xl font-semibold text-center mb-6">Inscription</h2>
-                                    
-                                    {authError && (
-                                        <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm">
-                                            {authError}
-                                        </div>
-                                    )}
-                                    
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                                        <input
-                                            type="email"
-                                            value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            placeholder="votre@email.com"
-                                            required
-                                        />
-                                    </div>
-                                    
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Mot de passe</label>
-                                        <input
-                                            type="password"
-                                            value={password}
-                                            onChange={(e) => setPassword(e.target.value)}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            placeholder="••••••••"
-                                            required
-                                            minLength="6"
-                                        />
-                                        <p className="text-xs text-gray-500 mt-1">Minimum 6 caractères</p>
-                                    </div>
-                                    
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Confirmer le mot de passe</label>
-                                        <input
-                                            type="password"
-                                            value={confirmPassword}
-                                            onChange={(e) => setConfirmPassword(e.target.value)}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            placeholder="••••••••"
-                                            required
-                                        />
-                                    </div>
-                                    
-                                    <button
-                                        type="submit"
-                                        className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium"
-                                    >
-                                        S'inscrire
-                                    </button>
-                                    
-                                    <div className="text-center mt-4">
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setAuthMode('login');
-                                                setAuthError('');
-                                            }}
-                                            className="text-blue-600 hover:text-blue-800 text-sm"
-                                        >
-                                            Déjà un compte ? Se connecter
-                                        </button>
-                                    </div>
-                                </form>
-                            )}
-                            
-                            <div className="mt-6 text-center text-xs text-gray-500">
-                                Connectez-vous pour synchroniser vos données entre tous vos appareils
-                            </div>
-                        </div>
-                    </div>
-                );
-            }
-
             return (
                 <div className="min-h-screen bg-gray-50">
-                    {/* Indicateur de synchronisation */}
-                    <div className={`sync-status ${getStatusColor()}`}>
-                        <i className={`fas ${syncStatus === 'synchronisé' ? 'fa-sync-alt fa-spin' : syncStatus === 'sauvegarde...' ? 'fa-spinner fa-spin' : syncStatus === 'connexion...' || syncStatus === 'inscription...' ? 'fa-spinner fa-spin' : syncStatus === 'connecté' ? 'fa-wifi' : 'fa-exclamation-circle'}`}></i>
-                        <span className="ml-2">{syncStatus}</span>
-                        {syncMessage && <span className="ml-2">• {syncMessage}</span>}
-                    </div>
-
-                    {/* Mobile menu button */}
-                    <div className="mobile-menu-button fixed top-4 left-4 z-40">
-                        <button
-                            onClick={() => setSidebarOpen(!sidebarOpen)}
-                            className="bg-white p-3 rounded-lg shadow-lg"
-                        >
-                            <i className="fas fa-bars text-gray-600"></i>
-                        </button>
-                    </div>
-
-                    {/* Navigation latérale - Desktop */}
-                    <div className="sidebar fixed left-0 top-0 h-full w-64 bg-white hidden md:block">
-                        <div className="p-6 border-b">
-                            <div className="flex items-center space-x-3">
-                                <i className="fas fa-wallet text-blue-600 text-2xl"></i>
-                                <div>
-                                    <h1 className="text-xl font-bold text-gray-800">Budget Personnel</h1>
-                                    <p className="text-sm text-gray-500">Gestion des finances</p>
-                                    {user && (
-                                        <p className="text-xs text-gray-400 mt-1 truncate">{user.email}</p>
-                                    )}
+                    {/* Navigation */}
+                    <nav className="bg-white shadow-sm">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="flex justify-between h-16">
+                                <div className="flex items-center">
+                                    <i className="fas fa-wallet text-blue-600 text-2xl mr-3"></i>
+                                    <div>
+                                        <h1 className="text-xl font-bold text-gray-800">Budget Personnel</h1>
+                                        <p className="text-xs text-gray-500">Gestion des finances</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center space-x-4">
+                                    <button
+                                        onClick={() => setCurrentView('dashboard')}
+                                        className={`px-3 py-2 rounded-md text-sm font-medium ${
+                                            currentView === 'dashboard' 
+                                                ? 'bg-blue-100 text-blue-700' 
+                                                : 'text-gray-600 hover:bg-gray-100'
+                                        }`}
+                                    >
+                                        <i className="fas fa-chart-line mr-1"></i>
+                                        Tableau de bord
+                                    </button>
+                                    <button
+                                        onClick={() => setCurrentView('ajout')}
+                                        className={`px-3 py-2 rounded-md text-sm font-medium ${
+                                            currentView === 'ajout' 
+                                                ? 'bg-blue-100 text-blue-700' 
+                                                : 'text-gray-600 hover:bg-gray-100'
+                                        }`}
+                                    >
+                                        <i className="fas fa-plus mr-1"></i>
+                                        Ajouter
+                                    </button>
+                                    <button
+                                        onClick={() => setCurrentView('historique')}
+                                        className={`px-3 py-2 rounded-md text-sm font-medium ${
+                                            currentView === 'historique' 
+                                                ? 'bg-blue-100 text-blue-700' 
+                                                : 'text-gray-600 hover:bg-gray-100'
+                                        }`}
+                                    >
+                                        <i className="fas fa-history mr-1"></i>
+                                        Historique
+                                    </button>
                                 </div>
                             </div>
                         </div>
-                        
-                        <nav className="mt-6">
-                            {menuItems.map(item => (
-                                <button
-                                    key={item.id}
-                                    onClick={() => {
-                                        setCurrentView(item.id);
-                                        setSidebarOpen(false);
-                                    }}
-                                    className={`w-full flex items-center space-x-3 px-6 py-3 text-left transition-colors nav-item ${
-                                        currentView === item.id ? 'active' : 'text-gray-600 hover:bg-gray-50'
-                                    }`}
-                                >
-                                    <i className={`fas ${item.icon} w-5 h-5`}></i>
-                                    <span>{item.label}</span>
-                                </button>
-                            ))}
-                            
-                            {/* Boutons d'export/import */}
-                            <div className="px-6 py-4 border-t mt-4">
-                                <button
-                                    onClick={saveToCloud}
-                                    className="w-full flex items-center justify-center space-x-2 px-4 py-2 text-left text-sm bg-blue-600 hover:bg-blue-700 text-white rounded mb-2"
-                                >
-                                    <i className="fas fa-cloud-upload-alt"></i>
-                                    <span>Sauvegarder dans le cloud</span>
-                                </button>
+                    </nav>
+
+                    {/* Contenu principal */}
+                    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                        {currentView === 'dashboard' && (
+                            <div>
+                                <h2 className="text-2xl font-bold text-gray-800 mb-6">Tableau de bord</h2>
                                 
-                                <button
-                                    onClick={resetData}
-                                    className="w-full flex items-center space-x-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 rounded"
-                                >
-                                    <i className="fas fa-trash-alt"></i>
-                                    <span>Réinitialiser</span>
-                                </button>
-                            </div>
-                            
-                            {/* Déconnexion */}
-                            <div className="px-6 py-4 border-t mt-4">
-                                <button
-                                    onClick={signOut}
-                                    className="w-full flex items-center space-x-2 px-4 py-2 text-left text-sm text-gray-600 hover:bg-gray-50 rounded"
-                                >
-                                    <i className="fas fa-sign-out-alt"></i>
-                                    <span>Déconnexion</span>
-                                </button>
-                            </div>
-                            
-                            {/* Informations de synchronisation */}
-                            <div className="px-6 py-4 border-t mt-4 text-xs text-gray-500">
-                                <div className="flex items-center">
-                                    <i className={`fas ${isOnline ? 'fa-circle text-green-500' : 'fa-circle text-gray-400'} mr-2`}></i>
-                                    <span>{isOnline ? 'Connecté au cloud' : 'Hors ligne'}</span>
+                                {/* Statistiques */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                                    <div className="bg-white rounded-lg card p-6">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="text-sm text-gray-500">Revenus totaux</p>
+                                                <p className="text-2xl font-bold text-green-600">{formatTND(getTotalRevenus())}</p>
+                                            </div>
+                                            <i className="fas fa-arrow-down text-green-500 text-2xl"></i>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="bg-white rounded-lg card p-6">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="text-sm text-gray-500">Dépenses totales</p>
+                                                <p className="text-2xl font-bold text-red-600">{formatTND(getTotalDepenses())}</p>
+                                            </div>
+                                            <i className="fas fa-arrow-up text-red-500 text-2xl"></i>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="bg-white rounded-lg card p-6">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="text-sm text-gray-500">Solde actuel</p>
+                                                <p className={`text-2xl font-bold ${getSolde() >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                    {formatTND(getSolde())}
+                                                </p>
+                                            </div>
+                                            <i className={`fas ${getSolde() >= 0 ? 'fa-piggy-bank text-green-500' : 'fa-exclamation-triangle text-red-500'} text-2xl`}></i>
+                                        </div>
+                                    </div>
                                 </div>
-                                {user && (
-                                    <div className="mt-1 truncate">
-                                        <span>Utilisateur: {user.email}</span>
+
+                                {/* Transactions récentes */}
+                                <div>
+                                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Transactions récentes</h3>
+                                    {transactions.length > 0 ? (
+                                        <div className="bg-white rounded-lg card overflow-hidden">
+                                            <div className="divide-y">
+                                                {transactions.slice(-5).reverse().map(transaction => (
+                                                    <div key={transaction.id} className="p-4 hover:bg-gray-50">
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center">
+                                                                <div className={`p-2 rounded-full ${
+                                                                    transaction.type === 'depense' ? 'bg-red-500' : 'bg-green-500'
+                                                                } text-white mr-3`}>
+                                                                    <i className={`fas ${transaction.type === 'depense' ? 'fa-arrow-up' : 'fa-arrow-down'}`}></i>
+                                                                </div>
+                                                                <div>
+                                                                    <p className="font-medium text-gray-800">
+                                                                        {transaction.description || transaction.categorie}
+                                                                    </p>
+                                                                    <p className="text-sm text-gray-500">
+                                                                        {transaction.date} • {transaction.methodePaiement}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <p className={`font-medium ${
+                                                                    transaction.type === 'depense' ? 'text-red-600' : 'text-green-600'
+                                                                }`}>
+                                                                    {transaction.type === 'depense' ? '-' : '+'}
+                                                                    {formatTND(transaction.montant)}
+                                                                </p>
+                                                                <p className="text-sm text-gray-500 capitalize">
+                                                                    {transaction.categorie}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="bg-white rounded-lg card p-12 text-center">
+                                            <i className="fas fa-exchange-alt text-gray-400 text-4xl mb-4"></i>
+                                            <p className="text-gray-600">Aucune transaction enregistrée</p>
+                                            <button
+                                                onClick={() => setCurrentView('ajout')}
+                                                className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                                            >
+                                                Ajouter une transaction
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {currentView === 'ajout' && (
+                            <div>
+                                <h2 className="text-2xl font-bold text-gray-800 mb-6">Ajouter une transaction</h2>
+                                
+                                <div className="bg-white rounded-lg card p-6">
+                                    <form onSubmit={handleSubmit} className="space-y-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setFormData({...formData, type: 'depense'})}
+                                                        className={`py-3 px-4 rounded-lg border ${
+                                                            formData.type === 'depense'
+                                                                ? 'bg-red-50 border-red-500 text-red-700'
+                                                                : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                                                        }`}
+                                                    >
+                                                        <i className="fas fa-arrow-up mr-2"></i>
+                                                        Dépense
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setFormData({...formData, type: 'revenu'})}
+                                                        className={`py-3 px-4 rounded-lg border ${
+                                                            formData.type === 'revenu'
+                                                                ? 'bg-green-50 border-green-500 text-green-700'
+                                                                : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                                                        }`}
+                                                    >
+                                                        <i className="fas fa-arrow-down mr-2"></i>
+                                                        Revenu
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                                                <input
+                                                    type="date"
+                                                    value={formData.date}
+                                                    onChange={(e) => setFormData({...formData, date: e.target.value})}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                    required
+                                                />
+                                            </div>
+                                            
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Catégorie</label>
+                                                <select
+                                                    value={formData.categorie}
+                                                    onChange={(e) => setFormData({...formData, categorie: e.target.value})}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                >
+                                                    <option value="alimentation">Alimentation</option>
+                                                    <option value="logement">Logement</option>
+                                                    <option value="transport">Transport</option>
+                                                    <option value="sante">Santé</option>
+                                                    <option value="loisirs">Loisirs</option>
+                                                    <option value="education">Éducation</option>
+                                                    <option value="vetements">Vêtements</option>
+                                                    <option value="autres">Autres</option>
+                                                </select>
+                                            </div>
+                                            
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Montant (TND)</label>
+                                                <input
+                                                    type="number"
+                                                    step="0.001"
+                                                    value={formData.montant}
+                                                    onChange={(e) => setFormData({...formData, montant: e.target.value})}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                    placeholder="0.000"
+                                                    required
+                                                />
+                                            </div>
+                                            
+                                            <div className="md:col-span-2">
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                                                <input
+                                                    type="text"
+                                                    value={formData.description}
+                                                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                    placeholder="Description de la transaction"
+                                                />
+                                            </div>
+                                            
+                                            <div className="md:col-span-2">
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Méthode de paiement</label>
+                                                <select
+                                                    value={formData.methodePaiement}
+                                                    onChange={(e) => setFormData({...formData, methodePaiement: e.target.value})}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                >
+                                                    <option value="especes">Espèces</option>
+                                                    <option value="carte-debit">Carte de débit</option>
+                                                    <option value="carte-credit">Carte de crédit</option>
+                                                    <option value="virement">Virement bancaire</option>
+                                                    <option value="cheque">Chèque</option>
+                                                    <option value="autre">Autre</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="flex space-x-4">
+                                            <button
+                                                type="submit"
+                                                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 font-medium"
+                                            >
+                                                Ajouter la transaction
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setCurrentView('dashboard')}
+                                                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
+                                            >
+                                                Annuler
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        )}
+
+                        {currentView === 'historique' && (
+                            <div>
+                                <h2 className="text-2xl font-bold text-gray-800 mb-6">Historique des transactions</h2>
+                                
+                                {transactions.length > 0 ? (
+                                    <div className="bg-white rounded-lg card overflow-hidden">
+                                        <div className="divide-y">
+                                            {transactions.reverse().map(transaction => (
+                                                <div key={transaction.id} className="p-4 hover:bg-gray-50">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center">
+                                                            <div className={`p-2 rounded-full ${
+                                                                transaction.type === 'depense' ? 'bg-red-500' : 'bg-green-500'
+                                                            } text-white mr-3`}>
+                                                                <i className={`fas ${transaction.type === 'depense' ? 'fa-arrow-up' : 'fa-arrow-down'}`}></i>
+                                                            </div>
+                                                            <div>
+                                                                <p className="font-medium text-gray-800">
+                                                                    {transaction.description || transaction.categorie}
+                                                                </p>
+                                                                <p className="text-sm text-gray-500">
+                                                                    {transaction.date} • {transaction.methodePaiement}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <p className={`font-medium ${
+                                                                transaction.type === 'depense' ? 'text-red-600' : 'text-green-600'
+                                                            }`}>
+                                                                {transaction.type === 'depense' ? '-' : '+'}
+                                                                {formatTND(transaction.montant)}
+                                                            </p>
+                                                            <p className="text-sm text-gray-500 capitalize">
+                                                                {transaction.categorie}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="bg-white rounded-lg card p-12 text-center">
+                                        <i className="fas fa-history text-gray-400 text-4xl mb-4"></i>
+                                        <p className="text-gray-600">Aucune transaction enregistrée</p>
+                                        <button
+                                            onClick={() => setCurrentView('ajout')}
+                                            className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                                        >
+                                            Ajouter une transaction
+                                        </button>
                                     </div>
                                 )}
                             </div>
-                        </nav>
-                    </div>
+                        )}
+                    </main>
+                </div>
+            );
+        };
 
-                    {/* Navigation latérale - Mobile */}
-                    {sidebarOpen && (
-                        <div className="sidebar-mobile fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden">
-                            <div className="bg-white w-64 h-full">
-                                <div className="p-6 border-b">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center space-x-3">
-                                            <i className="fas fa-wallet text-blue-600 text-2xl"></i>
-                                            <div>
-                                                <h1 className="text-xl font-bold text-gray-800">Budget Personnel</h1>
-                                                <p className="text-sm text-gray-500">Gestion des finances</p>
-                                                {user && (
-                                                    <p className="text-xs text-gray-400 mt-1 truncate">{user.email}</p>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <button
-                                            onClick={() => setSidebarOpen(false)}
-                                            className="text-gray-500"
-                                        >
-                                            <i className="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                                
-                                <nav className="mt-6">
-                                    {menuItems.map(item => (
-                                        <button
-                                            key={item.id}
-                                            onClick={() => {
-                                                setCurrentView(item.id);
-                                                setSidebarOpen(false);
-                                            }}
-                                            className={`w-full flex items-center space-x-3 px-6 py-3 text-left transition-colors nav-item ${
-                                                currentView === item.id ? 'active' : 'text-gray-600 hover:bg-gray-50'
-                                            }`}
-                                        >
-                                            <i className={`fas ${item.icon} w-5 h-5`}></i>
-                                            <span>{item.label}</span>
-                                        </button>
-                                    ))}
-                                    
-                                    {/* Boutons d'export/import mobile */}
-                                    <div className="px-6 py-4 border-t mt-4">
-                                        <button
-                                            onClick={() => {
-                                                saveToCloud();
-                                                setSidebarOpen(false);
-                                            }}
-                                            className="w-full flex items-center justify-center space-x-2 px-4 py-2 text-left text-sm bg-blue-600 hover:bg-blue-700 text-white rounded mb-2"
-                                        >
-                                            <i className="fas fa-cloud-upload-alt"></i>
-                                            <span>Sauvegarder</span>
-                                        </button>
-                                        
-                                        <button
-                                            onClick={() => {
-                                                resetData();
-                                                setSidebarOpen(false);
-                                            }}
-                                            className="w-full flex items-center space-x-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 rounded"
-                                        >
-                                            <i className="fas fa-trash-alt"></i>
-                                            <span>Réinitialiser</span>
-                                        </button>
-                                    </div>
-                                    
-                                    {/* Déconnexion mobile */}
-                                    <div className="px-6 py-4 border-t mt-4">
-                                        <button
-                                            onClick={() => {
-                                                signOut();
-                                                setSidebarOpen(false);
-                                            }}
-                                            className="w-full flex items-center space-x-2 px-4 py-2 text-left text-sm text-gray-600 hover:bg-gray-50 rounded"
-                                        >
-                                            <i className="fas fa-sign-out-alt"></i>
-                                            <span>Déconnexion</span>
-                                        </button>
-                                    </div>
-                                    
-                                    {/* Informations de synchronisation mobile */}
-                                    <div className="px-6 py-4 border-t mt-4 text-xs text-gray-500">
-                                        <div className="flex items-center">
-                                            <i className={`fas ${isOnline ? 'fa-circle text-green-500' : 'fa-circle text-gray-400'} mr-2`}></i>
-                                            <span>{isOnline ? 'Connecté au cloud' : 'Hors ligne'}</span>
-                                        </div>
-                                        {user && (
-                                            <div className="mt-1 truncate">
-                                                <span>Utilisateur: {user.email}</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                </nav>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Contenu principal */}
-                    <div className="main-content p-4 md:p-8 pt-20 md:pt-8">
-                        <AnimatePresence mode="wait">
-                            {currentView === 'dashboard' && (
-                                <div key="dashboard" className="animate-fade-in">
-                                    <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6">Tableau de bord</h2>
-                                    
-                                    {/* Statistiques */}
-                                    <div className="stats-grid grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6">
-                                        <div className="bg-white rounded-lg card p-4 md:p-6 hover:shadow-lg transition-shadow">
-                                            <div className="flex items-center justify-between">
-                                                <div>
-                                                    <p className="text-sm text-gray-500">Nombre d'entretiens</p>
-                                                    <p className="text-2xl md:text-3xl font-bold text-gray-800">{totalEntretiens}</p>
-                                                </div>
-                                                <i className="fas fa-wrench text-blue-500 text-xl md:text-2xl"></i>
-                                            </div>
-                                        </div>
-                                        
-                                        <div className="bg-white rounded-lg card p-4 md:p-6 hover:shadow-lg transition-shadow">
-                                            <div className="flex items-center justify-between">
-                                                <div>
-                                                    <p className="text-sm text-gray-500">Coût total</p>
-                                                    <p className="text-2xl md:text-3xl font-bold text-green-600">{formatTND(coutTotal)}</p>
-                                                </div>
-                                                <i className="fas fa-money-bill-wave text-green-500 text-xl md:text-2xl"></i>
-                                            </div>
-                                        </div>
-                                        
-                                        <div className="bg-white rounded-lg card p-4 md:p-6 hover:shadow-lg transition-shadow">
-                                            <div className="flex items-center justify-between">
-                                                <div>
-                                                    <p className="text-sm text-gray-500">Solde actuel</p>
-                                                    <p className={`text-2xl md:text-3xl font-bold ${soldeActuel >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatTND(soldeActuel)}</p>
-                                                </div>
-                                                <i className={`fas ${soldeActuel >= 0 ? 'fa-piggy-bank text-green-500' : 'fa-exclamation-triangle text-red-500'} text-xl md:text-2xl`}></i>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Liste des transactions récentes */}
-                                    <div>
-                                        <h3 className="text-lg md:text-xl font-semibold mb-4">Transactions récentes</h3>
-                                        {transactions.length > 0 ? (
-                                            <div className="bg-white rounded-lg card overflow-hidden">
-                                                <div className="divide-y">
-                                                    {transactions.slice(0, 5).map(transaction => {
-                                                        const categoryInfo = getCategoryInfo(transaction.categorie);
-                                                        return (
-                                                            <div key={transaction.id} className="p-3 md:p-4 hover:bg-gray-50 transition-colors">
-                                                                <div className="flex flex-col md:flex-row md:items-center justify-between space-y-2 md:space-y-0">
-                                                                    <div className="flex items-center space-x-3">
-                                                                        <div className={`p-2 rounded-full ${getTypeColor(transaction.categorie)} text-white`}>
-                                                                            <i className={`fas ${getTypeIcon(transaction.categorie)}`}></i>
-                                                                        </div>
-                                                                        <div>
-                                                                            <p className="font-semibold capitalize text-sm md:text-base">{getTypeLabel(transaction.categorie)}</p>
-                                                                            <p className="text-xs text-gray-500">{transaction.date} • {transaction.garage}</p>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="text-right">
-                                                                        <p className={`font-semibold text-sm md:text-base ${transaction.type === 'revenu' ? 'text-green-600' : 'text-red-600'}`}>
-                                                                            {transaction.type === 'revenu' ? '+' : '-'}{formatTND(transaction.montant)}
-                                                                        </p>
-                                                                        <p className="text-xs text-gray-500">{transaction.kilometrage?.toLocaleString()} km</p>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="bg-white rounded-lg card p-8 md:p-12 text-center">
-                                                <i className="fas fa-tools text-gray-400 text-3xl md:text-4xl mx-auto mb-3"></i>
-                                                <p className="text-gray-600 text-sm md:text-base">Aucune transaction enregistrée</p>
-                                                <p className="text-gray-500 text-xs mt-2">Commencez par ajouter votre première transaction</p>
-                                                <button
-                                                    onClick={() => setCurrentView('ajout')}
-                                                    className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                                                >
-                                                    Ajouter une transaction
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-
-                            {currentView === 'ajout' && (
-                                <div key="ajout" className="animate-fade-in">
-                                    <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6">Ajouter une transaction</h2>
-                                    
-                                    <div className="bg-white rounded-lg card p-4 md:p-6">
-                                        <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
-                                            <div className="form-grid grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-2">Type de transaction</label>
-                                                    <div className="grid grid-cols-2 gap-2">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setFormData({...formData, type: 'depense'})}
-                                                            className={`py-2 px-4 rounded-lg border ${
-                                                                formData.type === 'depense' 
-                                                                    ? 'bg-red-100 border-red-500 text-red-700' 
-                                                                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                                                            }`}
-                                                        >
-                                                            <i className="fas fa-arrow-up mr-2"></i>
-                                                            Dépense
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setFormData({...formData, type: 'revenu'})}
-                                                            className={`py-2 px-4 rounded-lg border ${
-                                                                formData.type === 'revenu' 
-                                                                    ? 'bg-green-100 border-green-500 text-green-700' 
-                                                                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                                                            }`}
-                                                        >
-                                                            <i className="fas fa-arrow-down mr-2"></i>
-                                                            Revenu
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
-                                                    <input
-                                                        type="date"
-                                                        value={formData.date}
-                                                        onChange={(e) => setFormData({...formData, date: e.target.value})}
-                                                        className="w-full px-3 py-2 md:px-4 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                        required
-                                                    />
-                                                </div>
-                                                
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-2">Montant (TND)</label>
-                                                    <input
-                   
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
