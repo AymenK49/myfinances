@@ -94,16 +94,16 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        // Configuration Firebase
+        // Configuration Firebase - Nouveau projet
         const firebaseConfig = {
-          apiKey: "AIzaSyD5ELdf07UoR-viw5YyYP384K7wPzlGz_E",
-          authDomain: "kia-maintenance-tracker.firebaseapp.com",
-          databaseURL: "https://kia-maintenance-tracker-default-rtdb.europe-west1.firebasedatabase.app",
-          projectId: "kia-maintenance-tracker",
-          storageBucket: "kia-maintenance-tracker.firebasestorage.app",
-          messagingSenderId: "625511645256",
-          appId: "1:625511645256:web:da1b38436fbebe4a3b187d",
-          measurementId: "G-2R4WRHQWK6"
+          apiKey: "AIzaSyAGD3U5XUqQuhxP2JxxltnNnCPLk3CIVDw",
+          authDomain: "gestion-financiere-tnd.firebaseapp.com",
+          databaseURL: "https://gestion-financiere-tnd-default-rtdb.europe-west1.firebasedatabase.app",
+          projectId: "gestion-financiere-tnd",
+          storageBucket: "gestion-financiere-tnd.firebasestorage.app",
+          messagingSenderId: "891261280632",
+          appId: "1:891261280632:web:0a4c9b408e7d078745688d",
+          measurementId: "G-WDFVCES5D0"
         };
 
         // Initialiser Firebase
@@ -130,8 +130,8 @@
 
         const App = () => {
             const [currentView, setCurrentView] = useState('dashboard');
-            const [soldeInitial, setSoldeInitial] = useState(0);
             const [transactions, setTransactions] = useState([]);
+            const [soldeInitial, setSoldeInitial] = useState(0);
             const [isOnline, setIsOnline] = useState(firebaseInitialized);
             const [syncStatus, setSyncStatus] = useState(firebaseInitialized ? 'connecté' : 'hors ligne');
             const [syncMessage, setSyncMessage] = useState('');
@@ -156,7 +156,28 @@
 
             const [searchTerm, setSearchTerm] = useState('');
             const [filterCategorie, setFilterCategorie] = useState('all');
+            const [filterPeriode, setFilterPeriode] = useState('all'); // 'all', 'semaine', 'mois', 'annee'
             const [sidebarOpen, setSidebarOpen] = useState(false);
+
+            // Catégories de dépenses
+            const categoriesDepenses = [
+                { id: 'alimentation', label: 'Alimentation', icon: 'fa-utensils', color: 'bg-red-500' },
+                { id: 'logement', label: 'Logement', icon: 'fa-home', color: 'bg-blue-500' },
+                { id: 'transport', label: 'Transport', icon: 'fa-car', color: 'bg-green-500' },
+                { id: 'sante', label: 'Santé', icon: 'fa-heartbeat', color: 'bg-pink-500' },
+                { id: 'loisirs', label: 'Loisirs', icon: 'fa-gamepad', color: 'bg-yellow-500' },
+                { id: 'education', label: 'Éducation', icon: 'fa-graduation-cap', color: 'bg-purple-500' },
+                { id: 'vetements', label: 'Vêtements', icon: 'fa-tshirt', color: 'bg-indigo-500' },
+                { id: 'autres', label: 'Autres', icon: 'fa-ellipsis-h', color: 'bg-gray-500' }
+            ];
+
+            // Catégories de revenus
+            const categoriesRevenus = [
+                { id: 'salaire', label: 'Salaire', icon: 'fa-wallet', color: 'bg-green-500' },
+                { id: 'investissement', label: 'Investissement', icon: 'fa-chart-line', color: 'bg-blue-500' },
+                { id: 'cadeau', label: 'Cadeau', icon: 'fa-gift', color: 'bg-yellow-500' },
+                { id: 'autres-revenus', label: 'Autres revenus', icon: 'fa-coins', color: 'bg-purple-500' }
+            ];
 
             // Gérer l'état d'authentification
             useEffect(() => {
@@ -321,34 +342,50 @@
                 .reduce((sum, transaction) => sum + parseFloat(transaction.montant), 0);
             
             const soldeActuel = soldeInitial + totalRevenus - totalDepenses;
-            const coutMoyen = transactions.length > 0 ? (totalDepenses / transactions.length).toFixed(3) : 0;
+            
+            const depensesParCategorie = {};
+            transactions
+                .filter(t => t.type === 'depense')
+                .forEach(transaction => {
+                    const cat = transaction.categorie;
+                    depensesParCategorie[cat] = (depensesParCategorie[cat] || 0) + parseFloat(transaction.montant);
+                });
 
-            // Catégories de dépenses
-            const categoriesDepenses = [
-                { id: 'alimentation', label: 'Alimentation', icon: 'fa-utensils', color: 'bg-red-500' },
-                { id: 'logement', label: 'Logement', icon: 'fa-home', color: 'bg-blue-500' },
-                { id: 'transport', label: 'Transport', icon: 'fa-car', color: 'bg-green-500' },
-                { id: 'sante', label: 'Santé', icon: 'fa-heartbeat', color: 'bg-pink-500' },
-                { id: 'loisirs', label: 'Loisirs', icon: 'fa-gamepad', color: 'bg-yellow-500' },
-                { id: 'education', label: 'Éducation', icon: 'fa-graduation-cap', color: 'bg-purple-500' },
-                { id: 'vetements', label: 'Vêtements', icon: 'fa-tshirt', color: 'bg-indigo-500' },
-                { id: 'autres', label: 'Autres', icon: 'fa-ellipsis-h', color: 'bg-gray-500' }
-            ];
+            // Filtrer les transactions par période
+            const filterTransactionsByPeriod = (transactions, period) => {
+                if (period === 'all') return transactions;
+                
+                const now = new Date();
+                const filtered = transactions.filter(transaction => {
+                    const transactionDate = new Date(transaction.date);
+                    
+                    switch(period) {
+                        case 'semaine':
+                            const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                            return transactionDate >= oneWeekAgo;
+                        case 'mois':
+                            const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+                            return transactionDate >= oneMonthAgo;
+                        case 'annee':
+                            const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+                            return transactionDate >= oneYearAgo;
+                        default:
+                            return true;
+                    }
+                });
+                
+                return filtered;
+            };
 
-            // Catégories de revenus
-            const categoriesRevenus = [
-                { id: 'salaire', label: 'Salaire', icon: 'fa-wallet', color: 'bg-green-500' },
-                { id: 'investissement', label: 'Investissement', icon: 'fa-chart-line', color: 'bg-blue-500' },
-                { id: 'cadeau', label: 'Cadeau', icon: 'fa-gift', color: 'bg-yellow-500' },
-                { id: 'autres-revenus', label: 'Autres revenus', icon: 'fa-coins', color: 'bg-purple-500' }
-            ];
-
-            const transactionsFiltrees = transactions.filter(transaction => {
-                const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                     transaction.categorie.toLowerCase().includes(searchTerm.toLowerCase());
-                const matchesFilter = filterCategorie === 'all' || transaction.categorie === filterCategorie;
-                return matchesSearch && matchesFilter;
-            });
+            const transactionsFiltrees = filterTransactionsByPeriod(
+                transactions.filter(transaction => {
+                    const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                         transaction.categorie.toLowerCase().includes(searchTerm.toLowerCase());
+                    const matchesFilter = filterCategorie === 'all' || transaction.categorie === filterCategorie;
+                    return matchesSearch && matchesFilter;
+                }),
+                filterPeriode
+            );
 
             const handleSubmit = (e) => {
                 e.preventDefault();
@@ -372,73 +409,25 @@
                 setSidebarOpen(false);
             };
 
-            const getTypeIcon = (type) => {
-                switch(type) {
-                    case 'depense': return 'fa-arrow-up';
-                    case 'revenu': return 'fa-arrow-down';
-                    case 'alimentation': return 'fa-utensils';
-                    case 'logement': return 'fa-home';
-                    case 'transport': return 'fa-car';
-                    case 'sante': return 'fa-heartbeat';
-                    case 'loisirs': return 'fa-gamepad';
-                    case 'education': return 'fa-graduation-cap';
-                    case 'vetements': return 'fa-tshirt';
-                    case 'autres': return 'fa-ellipsis-h';
-                    case 'salaire': return 'fa-wallet';
-                    case 'investissement': return 'fa-chart-line';
-                    case 'cadeau': return 'fa-gift';
-                    case 'autres-revenus': return 'fa-coins';
-                    default: return 'fa-question';
-                }
+            const getCategoryInfo = (categorie) => {
+                const depenseCat = categoriesDepenses.find(cat => cat.id === categorie);
+                const revenuCat = categoriesRevenus.find(cat => cat.id === categorie);
+                return depenseCat || revenuCat || { label: categorie, icon: 'fa-question', color: 'bg-gray-500' };
             };
 
-            const getTypeColor = (type) => {
-                switch(type) {
-                    case 'depense': return 'bg-red-500';
-                    case 'revenu': return 'bg-green-500';
-                    case 'alimentation': return 'bg-red-500';
-                    case 'logement': return 'bg-blue-500';
-                    case 'transport': return 'bg-green-500';
-                    case 'sante': return 'bg-pink-500';
-                    case 'loisirs': return 'bg-yellow-500';
-                    case 'education': return 'bg-purple-500';
-                    case 'vetements': return 'bg-indigo-500';
-                    case 'autres': return 'bg-gray-500';
-                    case 'salaire': return 'bg-green-500';
-                    case 'investissement': return 'bg-blue-500';
-                    case 'cadeau': return 'bg-yellow-500';
-                    case 'autres-revenus': return 'bg-purple-500';
-                    default: return 'bg-gray-500';
-                }
+            const getCategoryColor = (categorie) => {
+                const catInfo = getCategoryInfo(categorie);
+                return catInfo.color;
             };
 
-            const getUrgenceColor = (urgence) => {
-                switch(urgence) {
-                    case 'en-retard': return 'border-l-red-500 bg-red-50';
-                    case 'urgent': return 'border-l-orange-500 bg-orange-50';
-                    case 'bientot': return 'border-l-yellow-500 bg-yellow-50';
-                    default: return 'border-l-gray-300 bg-gray-50';
-                }
+            const getCategoryIcon = (categorie) => {
+                const catInfo = getCategoryInfo(categorie);
+                return catInfo.icon;
             };
 
-            const getTypeLabel = (type) => {
-                switch(type) {
-                    case 'depense': return 'Dépense';
-                    case 'revenu': return 'Revenu';
-                    case 'alimentation': return 'Alimentation';
-                    case 'logement': return 'Logement';
-                    case 'transport': return 'Transport';
-                    case 'sante': return 'Santé';
-                    case 'loisirs': return 'Loisirs';
-                    case 'education': return 'Éducation';
-                    case 'vetements': return 'Vêtements';
-                    case 'autres': return 'Autres';
-                    case 'salaire': return 'Salaire';
-                    case 'investissement': return 'Investissement';
-                    case 'cadeau': return 'Cadeau';
-                    case 'autres-revenus': return 'Autres revenus';
-                    default: return type;
-                }
+            const getCategoryLabel = (categorie) => {
+                const catInfo = getCategoryInfo(categorie);
+                return catInfo.label;
             };
 
             // Fonction pour formater les montants en TND
@@ -926,7 +915,7 @@
                                             <div className="bg-white rounded-lg card p-6 md:p-8 text-center">
                                                 <i className="fas fa-chart-pie text-gray-400 text-3xl md:text-4xl mx-auto mb-3"></i>
                                                 <p className="text-gray-600 text-sm md:text-base">Aucune dépense enregistrée</p>
-                                                <p className="text-gray-500 text-xs mt-2">Ajoutez des dépenses pour commencer à voir la répartition</p>
+                                                <p className="text-gray-500 text-xs mt-2">Ajoutez des dépenses pour commencer à recevoir des rappels</p>
                                             </div>
                                         )}
                                     </div>
@@ -943,12 +932,12 @@
                                                             <div key={transaction.id} className="p-3 md:p-4 hover:bg-gray-50 transition-colors">
                                                                 <div className="flex flex-col md:flex-row md:items-center justify-between space-y-2 md:space-y-0">
                                                                     <div className="flex items-center space-x-3">
-                                                                        <div className={`p-2 rounded-full ${getTypeColor(transaction.categorie)} text-white`}>
-                                                                            <i className={`fas ${getTypeIcon(transaction.categorie)}`}></i>
+                                                                        <div className={`p-2 rounded-full ${categoryInfo.color} text-white`}>
+                                                                            <i className={`fas ${getCategoryIcon(transaction.categorie)}`}></i>
                                                                         </div>
                                                                         <div>
-                                                                            <p className="font-semibold capitalize text-sm md:text-base">{getTypeLabel(transaction.categorie)}</p>
-                                                                            <p className="text-xs text-gray-500">{transaction.date} • {transaction.description}</p>
+                                                                            <p className="font-semibold text-sm md:text-base">{transaction.description || getCategoryLabel(transaction.categorie)}</p>
+                                                                            <p className="text-xs text-gray-500">{transaction.date} • {categoryInfo.label}</p>
                                                                         </div>
                                                                     </div>
                                                                     <div className="text-right">
@@ -1058,32 +1047,7 @@
                                                 </div>
                                                 
                                                 <div className="md:col-span-2">
-                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                        {formData.type === 'depense' ? 'Catégorie de dépense' : 'Catégorie de revenu'}
-                                                    </label>
-                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                                        {(formData.type === 'depense' ? categoriesDepenses : categoriesRevenus).map(category => (
-                                                            <button
-                                                                key={category.id}
-                                                                type="button"
-                                                                onClick={() => setFormData({...formData, categorie: category.id})}
-                                                                className={`flex flex-col items-center p-3 rounded-lg border ${
-                                                                    formData.categorie === category.id 
-                                                                        ? 'border-blue-500 bg-blue-50' 
-                                                                        : 'border-gray-300 hover:bg-gray-50'
-                                                                }`}
-                                                            >
-                                                                <div className={`w-8 h-8 rounded-full ${category.color} flex items-center justify-center text-white mb-2`}>
-                                                                    <i className={`fas ${category.icon}`}></i>
-                                                                </div>
-                                                                <span className="text-xs text-center">{category.label}</span>
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                                
-                                                <div className="md:col-span-2">
-                                                    <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">Description (optionnel)</label>
                                                     <input
                                                         type="text"
                                                         value={formData.description}
@@ -1091,6 +1055,32 @@
                                                         className="w-full px-3 py-2 md:px-4 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                                         placeholder="Description de la transaction"
                                                     />
+                                                </div>
+                                            </div>
+
+                                            {/* Catégories */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    {formData.type === 'depense' ? 'Catégorie de dépense' : 'Catégorie de revenu'}
+                                                </label>
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                                    {(formData.type === 'depense' ? categoriesDepenses : categoriesRevenus).map(category => (
+                                                        <button
+                                                            key={category.id}
+                                                            type="button"
+                                                            onClick={() => setFormData({...formData, categorie: category.id})}
+                                                            className={`flex flex-col items-center p-3 rounded-lg border ${
+                                                                formData.categorie === category.id 
+                                                                    ? 'border-blue-500 bg-blue-50' 
+                                                                    : 'border-gray-300 hover:bg-gray-50'
+                                                            }`}
+                                                        >
+                                                            <div className={`w-8 h-8 rounded-full ${category.color} flex items-center justify-center text-white mb-2`}>
+                                                                <i className={`fas ${category.icon}`}></i>
+                                                            </div>
+                                                            <span className="text-xs text-center">{category.label}</span>
+                                                        </button>
+                                                    ))}
                                                 </div>
                                             </div>
 
@@ -1131,7 +1121,7 @@
                                                         type="text"
                                                         value={searchTerm}
                                                         onChange={(e) => setSearchTerm(e.target.value)}
-                                                        placeholder="Rechercher par catégorie ou description..."
+                                                        placeholder="Rechercher par description ou catégorie..."
                                                         className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                                                     />
                                                 </div>
@@ -1153,6 +1143,20 @@
                                                     ))}
                                                 </select>
                                             </div>
+                                            
+                                            <div className="flex items-center space-x-2">
+                                                <i className="fas fa-calendar text-gray-500 text-sm"></i>
+                                                <select
+                                                    value={filterPeriode}
+                                                    onChange={(e) => setFilterPeriode(e.target.value)}
+                                                    className="px-3 py-2 md:px-4 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                                >
+                                                    <option value="all">Toute la période</option>
+                                                    <option value="semaine">Semaine dernière</option>
+                                                    <option value="mois">Mois dernier</option>
+                                                    <option value="annee">Année dernière</option>
+                                                </select>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -1168,12 +1172,12 @@
                                                     >
                                                         <div className="flex flex-col">
                                                             <div className="flex items-start space-x-3 mb-3">
-                                                                <div className={`p-2 md:p-3 rounded-full ${getTypeColor(transaction.categorie)} text-white`}>
-                                                                    <i className={`fas ${getTypeIcon(transaction.categorie)}`}></i>
+                                                                <div className={`p-2 md:p-3 rounded-full ${categoryInfo.color} text-white`}>
+                                                                    <i className={`fas ${getCategoryIcon(transaction.categorie)}`}></i>
                                                                 </div>
                                                                 <div className="flex-1">
                                                                     <div className="flex flex-wrap items-center space-x-2 mb-2">
-                                                                        <h3 className="text-lg font-semibold capitalize">{getTypeLabel(transaction.categorie)}</h3>
+                                                                        <h3 className="text-lg font-semibold">{transaction.description || getCategoryLabel(transaction.categorie)}</h3>
                                                                         <span className="text-xs text-gray-500">•</span>
                                                                         <span className="text-xs text-gray-500">{transaction.date}</span>
                                                                     </div>
@@ -1194,17 +1198,12 @@
                                                                             <p className="font-medium text-sm">{transaction.methodePaiement}</p>
                                                                         </div>
                                                                         <div>
-                                                                            <p className="text-xs text-gray-500">Description</p>
-                                                                            <p className="font-medium text-sm">{transaction.description}</p>
+                                                                            <p className="text-xs text-gray-500">Type</p>
+                                                                            <p className={`font-medium text-sm ${transaction.type === 'revenu' ? 'text-green-600' : 'text-red-600'}`}>
+                                                                                {transaction.type === 'revenu' ? 'Revenu' : 'Dépense'}
+                                                                            </p>
                                                                         </div>
                                                                     </div>
-
-                                                                    {transaction.notes && (
-                                                                        <div>
-                                                                            <p className="text-xs text-gray-500">Notes:</p>
-                                                                            <p className="text-gray-700 text-sm">{transaction.notes}</p>
-                                                                        </div>
-                                                                    )}
                                                                 </div>
                                                             </div>
                                                         </div>
