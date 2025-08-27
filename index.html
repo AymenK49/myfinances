@@ -779,7 +779,7 @@
                                                     <p className="text-sm text-gray-500">Solde actuel</p>
                                                     <p className={`text-2xl md:text-3xl font-bold ${soldeActuel >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatTND(soldeActuel)}</p>
                                                 </div>
-                                                <i className={`fas ${soldeActuel >= 0 ? 'fa-wallet text-green-600' : 'fa-exclamation-triangle text-red-500'} text-xl md:text-2xl`}></i>
+                                                <i className={`fas ${soldeActuel >= 0 ? 'fa-wallet text-green-500' : 'fa-exclamation-triangle text-red-500'} text-xl md:text-2xl`}></i>
                                             </div>
                                         </div>
                                         <div className="bg-white rounded-lg card p-4 md:p-6 hover:shadow-lg transition-shadow">
@@ -788,7 +788,7 @@
                                                     <p className="text-sm text-gray-500">Total des revenus</p>
                                                     <p className="text-2xl md:text-3xl font-bold text-green-300">{formatTND(totalRevenus)}</p>
                                                 </div>
-                                                <i className="fas fa-arrow-down text-green-300 text-xl md:text-2xl"></i>
+                                                <i className="fas fa-arrow-down text-green-500 text-xl md:text-2xl"></i>
                                             </div>
                                         </div>
                                         <div className="bg-white rounded-lg card p-4 md:p-6 hover:shadow-lg transition-shadow">
@@ -846,30 +846,36 @@
                                         {transactions.length > 0 ? (
                                             <div className="bg-white rounded-lg card overflow-hidden">
                                                 <div className="divide-y">
-                                                    {transactions.slice(0, 5).map(transaction => {
-                                                        const categoryInfo = getCategoryInfo(transaction.categorie);
-                                                        return (
-                                                            <div key={transaction.id} className="p-3 md:p-4 hover:bg-gray-50 transition-colors">
-                                                                <div className="flex flex-col md:flex-row md:items-center justify-between space-y-2 md:space-y-0">
-                                                                    <div className="flex items-center space-x-3">
-                                                                        <div className={`p-2 rounded-full ${categoryInfo.color} text-white`}>
-                                                                            <i className={`fas ${getCategoryIcon(transaction.categorie)}`}></i>
-                                                                        </div>
-                                                                        <div>
-                                                                            <p className="font-semibold text-sm md:text-base">{transaction.description || getCategoryLabel(transaction.categorie)}</p>
-                                                                            <p className="text-xs text-gray-500">{transaction.date} • {categoryInfo.label}</p>
+                                                    {
+                                                        // Trier les transactions par date (du plus récent au plus ancien) et prendre les 5 premières
+                                                        [...transactions]
+                                                            .sort((a, b) => new Date(b.date) - new Date(a.date))
+                                                            .slice(0, 5)
+                                                            .map(transaction => {
+                                                                const categoryInfo = getCategoryInfo(transaction.categorie);
+                                                                return (
+                                                                    <div key={transaction.id} className="p-3 md:p-4 hover:bg-gray-50 transition-colors">
+                                                                        <div className="flex flex-col md:flex-row md:items-center justify-between space-y-2 md:space-y-0">
+                                                                            <div className="flex items-center space-x-3">
+                                                                                <div className={`p-2 rounded-full ${categoryInfo.color} text-white`}>
+                                                                                    <i className={`fas ${getCategoryIcon(transaction.categorie)}`}></i>
+                                                                                </div>
+                                                                                <div>
+                                                                                    <p className="font-semibold text-sm md:text-base">{transaction.description || getCategoryLabel(transaction.categorie)}</p>
+                                                                                    <p className="text-xs text-gray-500">{transaction.date} • {categoryInfo.label}</p>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="text-right">
+                                                                                <p className={`font-semibold text-sm md:text-base ${transaction.type === 'revenu' ? 'text-green-600' : 'text-red-600'}`}>
+                                                                                    {transaction.type === 'revenu' ? '+' : '-'}{formatTND(parseFloat(transaction.montant))}
+                                                                                </p>
+                                                                                <p className="text-xs text-gray-500">{transaction.methodePaiement}</p>
+                                                                            </div>
                                                                         </div>
                                                                     </div>
-                                                                    <div className="text-right">
-                                                                        <p className={`font-semibold text-sm md:text-base ${transaction.type === 'revenu' ? 'text-green-600' : 'text-red-600'}`}>
-                                                                            {transaction.type === 'revenu' ? '+' : '-'}{formatTND(transaction.montant)}
-                                                                        </p>
-                                                                        <p className="text-xs text-gray-500">{transaction.methodePaiement}</p>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })}
+                                                                );
+                                                            })
+                                                    }
                                                 </div>
                                             </div>
                                         ) : (
