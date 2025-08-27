@@ -306,22 +306,28 @@
                     setSyncMessage('Non connecté');
                 }
             };
-            // Calculs pour le tableau de bord
-            const totalDepenses = transactions
+
+            // --- Calculs pour le tableau de bord ---
+            // Tri des transactions par date (du plus récent au plus ancien) avant calculs
+            const transactionsTrieParDate = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            const totalDepenses = transactionsTrieParDate
                 .filter(t => t.type === 'depense')
                 .reduce((sum, transaction) => sum + parseFloat(transaction.montant), 0);
-            const totalRevenus = transactions
+            const totalRevenus = transactionsTrieParDate
                 .filter(t => t.type === 'revenu')
                 .reduce((sum, transaction) => sum + parseFloat(transaction.montant), 0);
             const soldeActuel = soldeInitial + totalRevenus - totalDepenses;
+
             const depensesParCategorie = {};
-            transactions
+            transactionsTrieParDate // Utiliser la liste triée
                 .filter(t => t.type === 'depense')
                 .forEach(transaction => {
                     const cat = transaction.categorie;
                     depensesParCategorie[cat] = (depensesParCategorie[cat] || 0) + parseFloat(transaction.montant);
                 });
-            // Filtrer les transactions par période
+
+            // --- Filtrer les transactions par période ---
             const filterTransactionsByPeriod = (transactions, period) => {
                 if (period === 'all') return transactions;
                 const now = new Date();
@@ -343,6 +349,8 @@
                 });
                 return filtered;
             };
+
+            // Application du tri par date DÉCROISSANTE après les filtres de recherche/catégorie/période
             const transactionsFiltrees = filterTransactionsByPeriod(
                 transactions.filter(transaction => {
                     const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -351,7 +359,8 @@
                     return matchesSearch && matchesFilter;
                 }),
                 filterPeriode
-            );
+            ).sort((a, b) => new Date(b.date) - new Date(a.date)); // TRI ICI
+
             const handleSubmit = (e) => {
                 e.preventDefault();
                 const newTransaction = {
@@ -842,13 +851,14 @@
                                             </div>
                                         )}
                                     </div>
-                                    {/* Transactions récentes */}
+                                    {/* Transactions récentes - Utilise la liste triée */}
                                     <div>
                                         <h3 className="text-lg md:text-xl font-semibold mb-4">Transactions récentes</h3>
-                                        {transactions.length > 0 ? (
+                                        {transactionsTrieParDate.length > 0 ? ( // Utilise la liste triée
                                             <div className="bg-white rounded-lg card overflow-hidden">
                                                 <div className="divide-y">
-                                                    {transactions.slice(0, 5).map(transaction => {
+                                                    {/* Prend les 5 premières de la liste triée (les plus récentes) */}
+                                                    {transactionsTrieParDate.slice(0, 5).map(transaction => { // Utilise la liste triée
                                                         const categoryInfo = getCategoryInfo(transaction.categorie);
                                                         return (
                                                             <div key={transaction.id} className="p-3 md:p-4 hover:bg-gray-50 transition-colors">
@@ -1069,10 +1079,10 @@
                                             </div>
                                         </div>
                                     </div>
-                                    {/* Liste des transactions */}
+                                    {/* Liste des transactions - Utilise transactionsFiltrees triées */}
                                     <div className="space-y-3 md:space-y-4">
-                                        {transactionsFiltrees.length > 0 ? (
-                                            transactionsFiltrees.map(transaction => {
+                                        {transactionsFiltrees.length > 0 ? ( // Utilise la liste triée
+                                            transactionsFiltrees.map(transaction => { // Utilise la liste triée
                                                 const categoryInfo = getCategoryInfo(transaction.categorie);
                                                 return (
                                                     <div
