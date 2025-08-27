@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -201,8 +202,10 @@
                                 }
                             }
                             setIsOnline(true);
-                            setSyncStatus('synchronisé');
-                            setSyncMessage('Données chargées');
+                            // Masquer le message "synchronisé"
+                            // setSyncStatus('synchronisé');
+                            // Masquer le message "données chargées"
+                            // setSyncMessage('Données chargées');
                         } catch (error) {
                             console.error('Erreur de chargement:', error);
                             setSyncStatus('erreur');
@@ -222,7 +225,8 @@
                                 setTransactions(data.transactions);
                             }
                         }
-                        setSyncStatus('synchronisé');
+                        // Masquer le message "synchronisé"
+                        // setSyncStatus('synchronisé');
                     }, (error) => {
                         console.error("Erreur d'écoute:", error);
                     });
@@ -582,12 +586,14 @@
             }
             return (
                 <div className="min-h-screen bg-gray-50">
-                    {/* Indicateur de synchronisation */}
+                    {/* Indicateur de synchronisation - Masqué */}
+                    {/* 
                     <div className={`sync-status ${getStatusColor()}`}>
                         <i className={`fas ${syncStatus === 'synchronisé' ? 'fa-sync-alt fa-spin' : syncStatus === 'sauvegarde...' ? 'fa-spinner fa-spin' : syncStatus === 'connexion...' || syncStatus === 'inscription...' ? 'fa-spinner fa-spin' : syncStatus === 'connecté' ? 'fa-wifi' : 'fa-exclamation-circle'}`}></i>
                         <span className="ml-2">{syncStatus}</span>
                         {syncMessage && <span className="ml-2">• {syncMessage}</span>}
                     </div>
+                    */}
                     {/* Mobile menu button */}
                     <div className="mobile-menu-button fixed top-4 left-4 z-40">
                         <button
